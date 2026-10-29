@@ -1,0 +1,2 @@
+import type { Clip } from './types';
+export const portfolio: Clip = { anchors: [[52, 100], [52, 100], [87, 87], [89, 90]], keys: [{ t: 0, pose: { head: { rot: -5 }, 'browR': { ty: -4 }, 'upperArm.R': { rot: -90 } } }, { t: .3, pose: { head: { rot: 6 }, 'browL': { ty: -5 }, 'upperArm.R': { rot: -120 } } }, { t: .6, pose: { head: { rot: 0 }, 'upperArm.R': { rot: -40 } } }, { t: 1, pose: { head: { rot: -12 }, 'upperArm.R': { rot: -65 }, 'foreArm.R': { rot: -30 } } }] };

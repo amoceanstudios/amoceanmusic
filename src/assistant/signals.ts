@@ -1,0 +1,20 @@
+export type Signals = {
+    section: number;
+    progress: number;
+    speed: number;
+    direction: number;
+    changes: number;
+    idle: number;
+    hoverText: string;
+    hoverTime: number;
+    invalidEmail: boolean;
+    emptyMessage: boolean;
+    selection: string;
+    reduced: boolean;
+    width: number;
+    visits: number;
+    focused: string;
+    validation: string;
+    blurred: string;
+};
+export const initialSignals = (): Signals => ({ section: 0, progress: 0, speed: 0, direction: 0, changes: 0, idle: 0, hoverText: '', hoverTime: 0, invalidEmail: false, emptyMessage: false, selection: '', reduced: false, width: innerWidth, visits: 1, focused: '', validation: '', blurred: '' });

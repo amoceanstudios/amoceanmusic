@@ -1,0 +1,2 @@
+import type { Clip } from './types';
+export const load: Clip = { anchors: [[50, 58], [50, 58], [50, 58], [50, 58]], keys: [{ t: 0, pose: { root: { rot: -20, sx: .7, sy: 1.2 }, 'upperArm.L': { rot: 115 }, 'upperArm.R': { rot: -115 } } }, { t: .38, pose: { root: { rot: 720, sx: .65, sy: 1.35 } } }, { t: .52, pose: { root: { rot: 1080, sx: 1.3, sy: .7 } }, ease: 'hold' }, { t: .57, pose: { root: { rot: 1080, sx: .9, sy: 1.15 } } }, { t: .63, pose: { root: { rot: 1080, sx: 1, sy: 1 } } }, { t: 1, pose: { root: { rot: 1080 } } }] };

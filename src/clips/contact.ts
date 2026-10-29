@@ -1,0 +1,2 @@
+import type { Clip } from './types';
+export const contact: Clip = { anchors: [[80, 66], [80, 66], [80, 66], [80, 66]], keys: [{ t: 0, pose: { 'upperArm.R': { rot: 10 } } }, { t: .22, pose: { 'upperArm.R': { rot: 38 }, 'foreArm.R': { rot: 135 }, head: { rot: 7 } } }, { t: .38, pose: { 'upperArm.R': { rot: 38 }, 'foreArm.R': { rot: 135 }, head: { rot: 7 } } }, { t: .52, pose: { 'upperArm.R': { rot: 0 }, 'foreArm.R': { rot: 0 }, head: { rot: 0 } } }, { t: 1, pose: { 'spine1': { sy: 1.02 } } }] };

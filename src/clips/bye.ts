@@ -1,0 +1,2 @@
+import type { Clip } from './types';
+export const bye: Clip = { anchors: [[79, 65], [79, 65], [80, 63], [80, 63]], keys: [{ t: 0, pose: { head: { rot: 0 } } }, { t: .3, pose: { head: { rot: 15 }, 'browL': { rot: 18 }, 'browR': { rot: -18 }, 'spine2': { rot: 12 } } }, { t: .6, pose: { head: { rot: 19 }, 'spine2': { rot: 15 } } }, { t: 1, pose: { head: { rot: 19 }, root: { sx: .01, sy: .01 } } }] };

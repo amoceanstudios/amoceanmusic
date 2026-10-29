@@ -1,0 +1,1 @@
+export const palette = { fur: '#1F2A6B', belly: '#3B4DA8', outline: '#0B0F2E', ink: '#111111', lens: '#F6F4EF', white: '#FFFFFF', glint: '#FFFFFF', suit: '#34363E', shirt: '#FFFFFF', tie: '#C79B3A', mouth: '#151936', tongue: '#8796DF', book: '#E0C16B', paper: '#FFFCED', tear: '#91BEDB', ghost: '#8290CA' };
