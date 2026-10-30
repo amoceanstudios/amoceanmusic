@@ -1,9 +1,11 @@
+import {VolumeRig} from './volume';
 import { palette as p } from './palette';
 import { skeleton, idlePose, type Pose } from './skeleton';
 import { mouthPath, morph, type Viseme } from './visemes';
 import { bookMarkup, tieMarkup } from './props';
 const NS = 'http://www.w3.org/2000/svg';
 export class Rig {
+    volume:VolumeRig;
     root: SVGGElement;
     bones = new Map<string, SVGGElement>();
     mouth: SVGPathElement;
@@ -22,7 +24,7 @@ export class Rig {
         svg.append(this.ghosts);
         this.root = create('g') as SVGGElement;
         this.root.setAttribute('stroke', p.outline);
-        this.root.setAttribute('stroke-width', '2.5');
+        this.root.setAttribute('stroke-width', '1.5');
         this.root.setAttribute('stroke-linecap', 'round');
         this.root.setAttribute('stroke-linejoin', 'round');
         svg.append(this.root);
@@ -32,19 +34,19 @@ export class Rig {
             this.bones.set(b.id, g);
             (b.parent ? this.bones.get(b.parent)! : this.root).append(g);
         }
-        const shape = (id: string, html: string) => this.bones.get(id)!.insertAdjacentHTML('afterbegin', html), limb = (d: string, width = 5) => `<path d="${d}" fill="none" stroke="${p.outline}" stroke-width="${width + 2.5}"/><path d="${d}" fill="none" stroke="${p.fur}" stroke-width="${width}"/>`;
+        const shape = (id: string, html: string) => this.bones.get(id)!.insertAdjacentHTML('afterbegin', html), limb = (d: string, width = 6) => `<path d="${d}" fill="none" stroke="${p.outline}" stroke-width="${width + 1.8}"/><path d="${d}" fill="none" stroke="${p.fur}" stroke-width="${width}"/>`;
         shape('hips', `<ellipse cy="-4" rx="12" ry="16" fill="${p.fur}"/>`);
-        shape('spine1', `<path d="M-10 0Q-17-22-8-38Q3-45 12-28L11 16-10 16Z" fill="${p.fur}"/><path d="M-4-27Q8-19 4 3" stroke="${p.belly}" stroke-width="9" fill="none"/>`);
-        shape('spine2', `<path d="M-12 9Q-17-9-7-24Q9-29 14-10L11 10Z" fill="${p.fur}"/>`);
+        shape('spine1', `<path d="M-10 8C-13-9-18-28-7-39C5-44 14-30 12-14C10-2 14 11 8 16Q0 21-10 8Z" fill="${p.fur}"/><path d="M-4-27Q8-19 4 3" stroke="${p.belly}" stroke-width="9" fill="none"/>`);
+        shape('spine2', `<path d="M-12 9C-17-3-16-17-7-24C7-32 19-16 14-2Q12 16-12 9Z" fill="${p.fur}"/>`);
         shape('neck', limb('M0 0Q-5-8 0-17', 8));
-        shape('head', `<path d="M-24-10Q-27-34-5-35Q24-38 25-13L21 13Q9 31-12 22Q-27 15-24-10Z" fill="${p.fur}"/><ellipse cy="13" rx="20" ry="12" fill="${p.belly}"/><path d="M19-22Q29 7 14 22" stroke-width="4" fill="none"/>`);
+        shape('head', `<path d="M-25-9C-29-29-17-39-1-38C20-40 30-24 26-8C28 11 17 27 0 27C-19 27-29 12-25-9Z" fill="${p.fur}"/><ellipse cy="13" rx="20" ry="12" fill="${p.belly}"/><path d="M19-22Q29 7 14 22" stroke-width="4" fill="none"/>`);
         shape('earL', `<path d="M-5 0Q-12-18-5-27Q3-31 5-21L5 1Z" fill="${p.fur}"/>`);
         shape('fold', `<path d="M-5 1Q-13-19-4-27Q5-24 5-1Z" fill="${p.fur}"/><path d="M-3-4v-13" stroke="${p.belly}" stroke-width="3"/>`);
         shape('earR', `<path d="M-5 0Q-8-27 1-42Q10-38 7-19L5 0Z" fill="${p.fur}"/><path d="M1-9v-19" stroke="${p.belly}" stroke-width="3"/>`);
         for (const side of ['L', 'R']) {
             const sign = side === 'L' ? -1 : 1;
-            shape('upperArm.' + side, limb(`M0 0Q${sign * 12} 14 ${sign * 8} 28`, 4));
-            shape('foreArm.' + side, limb(`M0 0Q${sign * -5} 13 ${sign * 4} 25`, 3.5));
+            shape('upperArm.' + side, limb(`M0 0Q${sign * 12} 14 ${sign * 8} 28`, 5.8));
+            shape('foreArm.' + side, limb(`M0 0Q${sign * -5} 13 ${sign * 4} 25`, 4.9));
             shape('hand.' + side, `<path d="M-5-2Q-15-8-16-3Q-17 1-9 4Q-19 4-17 9Q-14 13-5 10Q-13 16-8 19Q-3 21 3 12Q12 4 5-4Q2-7-1-1Z" fill="${p.belly}"/>`);
             shape('thigh.' + side, limb(`M0 0Q${sign * 8} 16 ${sign * 5} 30`, 5));
             shape('shin.' + side, limb('M0 0Q-5 12 0 28', 4));
@@ -102,8 +104,9 @@ export class Rig {
             this.bones.get('eyes')!.append(g);
             this.glints.push(g);
         }
+        this.volume=new VolumeRig(svg,this.bones);
     }
-    pose(pose: Pose) { for (const b of skeleton) {
+    pose(pose: Pose) { this.volume.project(pose);for (const b of skeleton) {
         const v = { ...idlePose[b.id], ...pose[b.id] };
         this.bones.get(b.id)!.setAttribute('transform', `translate(${b.x + (v.tx || 0)} ${b.y + (v.ty || 0)}) rotate(${v.rot || 0}) scale(${v.sx ?? 1} ${v.sy ?? 1})`);
     } }

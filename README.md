@@ -140,3 +140,11 @@ The same rig now has a shot-staging layer; existing clips, task poses, voice sam
 Reduced motion removes depth travel, blur, parallax, anticipation, secondary offsets, balloon breathing and spring following. It hard-cuts to a readable pose and keeps the speech tail, tools, clips and optional audio available. No audio cue timing is stretched to match visual depth; entry whooshes are emitted at the launch beat and recorded speech continues on its existing sample clock.
 
 `tests/cinematic.spec.ts` exercises the shot lifecycle, vector selection, portal replay, desktop/mobile balloon bounds and tail geometry, plus live reduced-motion changes. Browser screenshots of the approach and balloon are written to `/tmp/jimmy-depth-*.png` and `/tmp/jimmy-bubble-*.png` for visual review.
+
+## 2.5D character rendering
+
+`src/rig/volume.ts` adds lit vector surfaces to the same rig: diffuse/rim gradients derived from palette tokens, rounded tubular limbs, a sculpted muzzle and nose, softened head/ground shadows, shaded clothing and curved transparent lenses placed in front of the eyes. Mouth contours use smooth closed curves while retaining the same 12-point morph correspondence and audio cues.
+
+A small spring-driven yaw changes the relative position of the muzzle, eyes, glasses, brows and mouth, plus head foreshortening and highlight position. It follows flight direction and screen position. Reduced motion holds this projection and lighting still. This is a layered 2.5D vector character, not an imported 3D mesh, and needs no WebGL library, textures or model downloads. Existing skeleton, tool attachments, visemes, recorded audio, staging and foreground occlusion remain shared.
+
+`tests/volume.spec.ts` checks bounded palette-derived colors, front-of-eye glass ordering, visible sculpted features, live reduced-motion changes and desktop/mobile close-up renders. Screenshots are written to `/tmp/jimmy-25d-*.png`.

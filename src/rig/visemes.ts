@@ -6,4 +6,4 @@ const specs: Record<Viseme, [
 ]> = { rest: [8, 1], MBP: [7, 2], AA: [8, 10], EE: [13, 4], OH: [6, 10], OO: [4, 7], wide: [15, 9], grimace: [12, 2] };
 export function points(v: Viseme) { const [w, h] = specs[v]; return Array.from({ length: 12 }, (_, i) => { const a = i / 12 * Math.PI * 2; return [Math.cos(a) * w, Math.sin(a) * h]; }); }
 export function morph(a: Viseme, b: Viseme, t: number) { const x = points(a), y = points(b); return x.map((p, i) => p.map((n, j) => n + (y[i][j] - n) * t)); }
-export function mouthPath(p: number[][]) { return 'M' + p.map(n => n.join(',')).join('L') + 'Z'; }
+export function mouthPath(p:number[][]){const mid=(a:number[],b:number[])=>[(a[0]+b[0])/2,(a[1]+b[1])/2];let path='M'+mid(p.at(-1)!,p[0]).join(',');p.forEach((point,i)=>{path+='Q'+point.join(',')+' '+mid(point,p[(i+1)%p.length]).join(',')});return path+'Z'}

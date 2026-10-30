@@ -29,14 +29,14 @@ export class Bubble {
         const w = this.el.offsetWidth || 280, h = this.el.offsetHeight || 120, scale = reduced ? 1 : clamp(.93 + depth * .05, .94, 1.06);
         const width = w * scale, height = h * scale;
         const inset = 14;
-        const candidates = [{ x: face.x - width * .6, y: face.y - height - 115 * clamp(depth, .6, 1.7) }, { x: face.x + 55, y: face.y - height * .7 }, { x: face.x - width - 55, y: face.y - height * .7 }, { x: face.x - width * .5, y: face.y + 55 }].map((p, priority) => ({ priority, x: clamp(p.x, inset, Math.max(inset, innerWidth - width - inset)), y: clamp(p.y, 78, Math.max(78, innerHeight - height - inset)) }));
+        const candidates = [{ x: face.x - width * .6, y: face.y - height - 115 * clamp(depth, .6, 1.7) }, { x: face.x + 55, y: face.y - height * .7 }, { x: face.x - width - 55, y: face.y - height * .7 }, { x: face.x - width * .5, y: face.y + 55 },{x:face.x-width*.5,y:78}].map((p, priority) => ({ priority, x: clamp(p.x, inset, Math.max(inset, innerWidth - width - inset)), y: clamp(p.y, 78, Math.max(78, innerHeight - height - inset)) }));
         const obstacles = [...document.querySelectorAll<HTMLElement>('[data-richie-avoid],#jimmy-dialog[open],.controls')].map(n => n.getBoundingClientRect()).filter(b => b.bottom > 0 && b.top < innerHeight);
         const actor = document.querySelector<SVGElement>('#jimmy-depth-plane >g:last-child')?.getBoundingClientRect();
         if (actor)
             obstacles.push(actor);
         const score = (p: Point & {
             priority: number;
-        }) => [0, 90, 90, 240][p.priority] + obstacles.reduce((sum, b) => sum + Math.max(0, Math.min(p.x + width, b.right) - Math.max(p.x, b.left)) * Math.max(0, Math.min(p.y + height, b.bottom) - Math.max(p.y, b.top)), 0) + Math.hypot(p.x + width / 2 - face.x, p.y + height - face.y) * .02;
+        }) => [0, 90, 90, 240, 30][p.priority] + obstacles.reduce((sum, b) => sum + Math.max(0, Math.min(p.x + width, b.right) - Math.max(p.x, b.left)) * Math.max(0, Math.min(p.y + height, b.bottom) - Math.max(p.y, b.top)), 0) + Math.hypot(p.x + width / 2 - face.x, p.y + height - face.y) * .02;
         const target = candidates.sort((a, b) => score(a) - score(b))[0];
         if (!this.ready || reduced) {
             this.x.reset(target.x);
@@ -72,7 +72,7 @@ export class Bubble {
         const tip = { x: face.x + side * 22 * clamp(depth, .55, 5.7), y: face.y + 2 }, size = this.style === 'whisper' ? 5 : 10;
         const bend = { x: (base.x + tip.x) / 2 + side * 22 * clamp(depth, .6, 1.7), y: (base.y + tip.y) / 2 };
         this.path.setAttribute('d', `M${base.x - normal.x * size},${base.y - normal.y * size} Q${bend.x},${bend.y} ${tip.x},${tip.y} Q${bend.x + normal.x * 7},${bend.y + normal.y * 7} ${base.x + normal.x * size},${base.y + normal.y * size}Z`);
-        this.path.setAttribute('opacity', dist > 300 ? '0' : '.99');
+        this.path.setAttribute('opacity', dist > Math.max(300,180*depth) ? '0' : '.99');
         this.tail.dataset.style = this.style;
         this.el.dataset.tailTarget = `${Math.round(tip.x)},${Math.round(tip.y)}`;
     }

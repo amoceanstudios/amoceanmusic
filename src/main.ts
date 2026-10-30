@@ -451,6 +451,7 @@ function logic(dt: number) {
     previousClose = close;
     companion.frame(pose,index,age);
     cinematicMotion.apply(pose,shot!,time,x.velocity,y.velocity,reduced.matches,companion.state==='working');
+    rig.volume.view(x.velocity,dt,reduced.matches,x.value,innerWidth);
     rig.pose(pose);
     const aboutOpen = index === 2 ? clamp((progress - .3) / .08) * (1 - clamp((progress - .80) / .08)) : 0;
     rig.props(aboutOpen, index === 4, index === 2 ? clamp((progress - .53) / .12) : 0, tie.value);
@@ -552,7 +553,7 @@ function frame(ms: number) {
         const rotate = (id: string, value: number) => { const bone = rig.bones.get(id)!; bone.setAttribute('transform', (bone.getAttribute('transform') || '').replace(/rotate\([^)]*\)/, `rotate(${value})`)); };
         rotate('fold', mix(smoothPrevious.ear, smoothCurrent.ear));
         tufts.forEach((_, i) => rotate('tuft' + (i + 1), (pose['tuft' + (i + 1)]?.rot || 0) + mix(smoothPrevious.tufts[i], smoothCurrent.tufts[i]) - smoothCurrent.tufts[i]));
-        rig.bones.get('glasses')!.setAttribute('transform', `translate(${mix(smoothPrevious.gx, smoothCurrent.gx)} ${-3 + mix(smoothPrevious.gy, smoothCurrent.gy)})`);
+        rig.bones.get('glasses')!.setAttribute('transform', `translate(${mix(smoothPrevious.gx, smoothCurrent.gx)+(pose.glasses?.tx||0)-smoothCurrent.gx} ${-3 + mix(smoothPrevious.gy, smoothCurrent.gy)})`);
         rig.tie.setAttribute('transform', `rotate(${mix(smoothPrevious.tie, smoothCurrent.tie)})`);
     }
     if(!bubble.el.hidden){const matrix=rig.bones.get('mouth')!.getScreenCTM();if(matrix){const face=new DOMPoint(0,3).matrixTransform(matrix);bubble.follow(face,cinematicScale,reduced.matches,Math.max(.001,dt))}}
