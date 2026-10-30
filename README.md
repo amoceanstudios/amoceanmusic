@@ -1,6 +1,6 @@
 # Motion Music
 
-An original ink-blue character, Richie, performs six scroll scenes and provides a local, rule-based assistant. Vite + TypeScript; SVG rig; no framework, images, external fonts, API keys, backend, microphone, or speech service.
+An original ink-blue character performs six scroll scenes, now expanded into the Jimmy companion with local tools and an optional server-side AI endpoint. Vite + TypeScript and one SVG rig; no framework or external fonts. The tour and local tools need no API key. AI requires private Netlify Functions configuration; dictation is explicitly optional.
 
 ## Run
 
@@ -97,3 +97,32 @@ Click **Start experience** to replay the tour with sound, or continue silently. 
 `src/audio/engine.ts` contains the score, synthesis and mixer. `beats.ts` maps clip progress to effects; `visuals.ts` implements sound-reactive visual accents; `ui.ts` handles opt-in and controls. `scripts/voices.py` is only an authoring tool. Flite is an open-source speech synthesizer from Carnegie Mellon (https://github.com/festvox/flite); its libraries are not bundled in the site.
 
 Audio tests decode and play a real bundled clip in Chromium, measure voice activity, check dialogue/animation clock drift, verify ducking and mute, check every asset/phoneme track, and exercise UI sound feedback. Browser playback is verified; final mix preference remains subjective.
+
+## Jimmy companion upgrade
+
+Richie’s existing original rig and all 24 recorded voices, scene clips, music buses and mixer are retained. The expanded companion is named Jimmy in the new bag; the older tour controls retain the Richie label for compatibility. Click Jimmy or his gold bag, or press `/`. Drag the character to a preferred free area; text avoidance remains authoritative, so he may move away from a position that covers content. Minimize or Quiet turns him into a small portal; click it to restore him, even after the footer farewell.
+
+Feature modules:
+
+- `src/companion/tools.ts`: arithmetic parser (no eval), conversion and timer/reminder parsing, searchable categorized registry.
+- `companion.ts`: bag UI, drag/minimize, portal entry, task poses/hand prop, local tools and explicit permission gestures.
+- `ai.ts`: opt-in client, cancellation, timeout, section-only context.
+- `netlify/functions/jimmy.mjs`: real server-side OpenAI Responses API route, task allowlist, bounded input/output, same-origin checks, access-code comparison and per-instance request throttling. It never receives the contact form or whole page automatically and never executes model-generated actions.
+
+### Enable real AI on Netlify
+
+In **Netlify → Environment variables**, add **JIMMY_AI_KEY** (your OpenAI API key, Functions scope) and **JIMMY_ACCESS_CODE** (a strong private access code). Optionally set **JIMMY_AI_MODEL**; default is `gpt-4.1-mini`. Redeploy so Functions receive the values. Never put the provider key in `VITE_*` variables, source, browser code, or chat. On the site, open AI/privacy, enable AI and enter only the access code. The access code stays in page memory. Provider usage can incur charges; set a provider budget. The in-memory limiter is per active function instance, not a durable global quota; the access code is required even if the provider key exists.
+
+Without these server values, the route returns an explicit configuration error, not a pretend AI answer. Local calculator, notes, timers, files, clipboard and unit conversions work without AI. Open-ended conversation, translation, summarization, rewriting, spelling and image OCR use the configured endpoint. AI answers are not automatically executed. Plain `vite` has no Functions runtime; use deployed Netlify or Netlify Dev to exercise the real endpoint. A static-only zip cannot provide server AI.
+
+### Tool behavior and limits
+
+- Web search and image generation are explicit external shortcuts, not automated browsing or a built-in image model.
+- Notes and reminder deadlines are stored locally. Undo restores the previous note or removes a newly created reminder; external clipboard writes and opened tabs cannot be undone by this page.
+- Timers use absolute deadlines, show cancel controls and alert on resume. They do not run as an OS background service; keep the page open. Reminders support `over 20 min` or `morgen 09:00 | label` in the browser’s local timezone, plus `.ics` export for a calendar app.
+- Text files are read locally; image OCR accepts PNG/JPEG/WebP up to 2.8 MB and sends the chosen image only after AI opt-in + OK. Files are never uploaded just by selecting them.
+- Clipboard and microphone require user gestures and browser support. Dictation may use the browser vendor’s speech service; this is disclosed before starting. Stop, closing the bag or minimizing ends dictation.
+- Weather queries Open-Meteo for an explicitly typed city; currency uses Frankfurter reference rates, not live trading prices. These two tools need Internet access. They do not request location permission.
+- Task progress is represented by a working pose and a hand-held board, with success/dance and error/recovery poses and existing sounds. Local tasks have a brief anticipation phase; Stop cancels pending local work and AI output. Reduced motion uses static poses. The original tour remains available alongside these interactions.
+
+`npm test` includes separate companion tool/browser tests and a server test with a mocked AI upstream. Live provider behavior requires your actual server configuration; it is not covered by the mock.

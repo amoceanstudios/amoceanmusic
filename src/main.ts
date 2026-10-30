@@ -1,4 +1,5 @@
 import './style.css';
+import {Companion} from './companion/companion';
 import { soundscape } from './audio/engine';
 import { AudioBeats } from './audio/beats';
 import { setupAudioUI } from './audio/ui';
@@ -57,7 +58,7 @@ function announce(text: string, scripted = false) {
 function go(id: string) { const old = scrollY; document.getElementById(id)?.scrollIntoView({ behavior: reduced.matches ? 'instant' : 'smooth' }); bubble.chip('Undo scroll', () => { scrollTo({ top: old, behavior: reduced.matches ? 'instant' : 'smooth' }); bubble.hide(); }); }
 const nav = minimap(go), copy = selectionChip(async (text) => { const ok = await copyText(text); document.getElementById('live')!.textContent = ok ? 'Selected text copied. Clipboard changes cannot be undone here.' : 'Clipboard unavailable. Use your browser’s Copy command.'; copy.hide(); });
 setupForm(signals);
-function park(value: boolean) {
+function park(value: boolean) {companion.setMinimized(value);
     brain.quiet = value;
     document.getElementById('quiet')!.setAttribute('aria-pressed', String(value));
     document.getElementById('quiet')!.textContent = value ? '☾ Quiet on' : '☾ Quiet';
@@ -258,6 +259,7 @@ function logic(dt: number) {
             scriptQueue.push(index);
     }
     player.step(dt);
+    if(!player.busy&&companionSpeech&&scriptQueue.length===0){const text=companionSpeech;companionSpeech=null;announce(text)}
     if (player.busy)
         bubble.expiry = Math.max(bubble.expiry, time + 1.5);
     if (!player.busy && activeScript >= 0)
@@ -338,8 +340,10 @@ function logic(dt: number) {
         target = { x: innerWidth - 55, y: innerHeight - 120 };
         scale = .62;
     }
+    if(companion.manual&&!brain.quiet&&!close)target={...companion.manual};
+    if(companion.isOpen&&!brain.quiet){close=false;scale=innerWidth<650?.62:.9;target={x:innerWidth<650?innerWidth-65:Math.max(80,innerWidth-550),y:innerWidth<650?innerHeight-65:innerHeight*.70}}
     if (!close && index !== 0) {
-        const boxes = [...document.querySelectorAll<HTMLElement>('[data-richie-avoid]')].map(e => e.getBoundingClientRect()).filter(r => r.bottom > 0 && r.top < innerHeight);
+        const boxes = [...document.querySelectorAll<HTMLElement>('[data-richie-avoid],#jimmy-dialog[open]')].map(e => e.getBoundingClientRect()).filter(r => r.bottom > 0 && r.top < innerHeight);
         const pivot = { x: target.x, y: target.y - 52 * scale };
         const free = safeAnchor(pivot, boxes, 70 * scale, 120 * scale, innerWidth, innerHeight);
         target = { x: free.x, y: free.y + 52 * scale };
@@ -362,7 +366,7 @@ function logic(dt: number) {
         }
     }
     if (!close && index !== 0 && !brain.quiet) {
-        const obstacles = [...document.querySelectorAll<HTMLElement>('[data-richie-avoid]')].map(e => e.getBoundingClientRect()).filter(r => r.bottom > 0 && r.top < innerHeight);
+        const obstacles = [...document.querySelectorAll<HTMLElement>('[data-richie-avoid],#jimmy-dialog[open]')].map(e => e.getBoundingClientRect()).filter(r => r.bottom > 0 && r.top < innerHeight);
         const free = safeAnchor({ x: x.value, y: y.value - 52 * scale }, obstacles, 70 * scale, 120 * scale, innerWidth, innerHeight);
         if (Math.hypot(free.x - x.value, free.y - (y.value - 52 * scale)) > 1) {
             x.reset(free.x);
@@ -434,6 +438,7 @@ function logic(dt: number) {
     if (previousClose && !close && !reduced.matches)
         soundscape.event('reveal', pan, .75);
     previousClose = close;
+    companion.frame(pose,index,age);
     rig.pose(pose);
     const aboutOpen = index === 2 ? clamp((progress - .3) / .08) * (1 - clamp((progress - .80) / .08)) : 0;
     rig.props(aboutOpen, index === 4, index === 2 ? clamp((progress - .53) / .12) : 0, tie.value);
@@ -441,7 +446,7 @@ function logic(dt: number) {
     rig.face(player.viseme, dt, blink, index === 5 ? clamp((progress - .18) * 2) : 0, reduced.matches);
     let outerScale = scale;
     if (index === 5 && !brain.quiet)
-        outerScale *= reduced.matches ? 1 : Math.max(.001, 1 - clamp((progress - .60) / .35));
+        outerScale *= reduced.matches||companion.forceIdle ? 1 : Math.max(.001, 1 - clamp((progress - .60) / .35));
     const deformation = deform(x.velocity, y.velocity), bank = reduced.matches ? 0 : deformation.bank;
     let deformTransform = '';
     if (!reduced.matches && speed > 100 && !close && !brain.quiet)
@@ -451,7 +456,7 @@ function logic(dt: number) {
     rig.smear(smearFrames > 0, x.velocity, y.velocity);
     if (smearFrames > 0)
         smearFrames--;
-    const spinning = index === 0 && progress < .55 && visits === 1 && !reduced.matches;
+    const spinning = !companion.intro && index === 0 && progress < .55 && visits === 1 && !reduced.matches;
     whirlwind.setAttribute('visibility', spinning ? 'visible' : 'hidden');
     whirlwind.setAttribute('transform', `translate(${x.value},${y.value - 55}) rotate(${time * 930})`);
     [...whirlwind.children].forEach((n, i) => { const a = i / 14 * Math.PI * 2, r = 35 + (i % 4) * 13; n.setAttribute('transform', `translate(${Math.cos(a) * r} ${Math.sin(a) * r * .65}) rotate(${i * 39})`); });
@@ -485,7 +490,7 @@ function logic(dt: number) {
     signals.changes = changes.length;
     brain.now = time;
     brain.observe(signals);
-    if (!player.busy && scriptQueue.length === 0) {
+    if (!player.busy && scriptQueue.length === 0 && !companion.isOpen && companion.state!=='working') {
         if (pending) {
             execute(pending);
             pending = null;
@@ -505,7 +510,9 @@ function logic(dt: number) {
     hit.style.height = Math.min(220, 190 * scale) + 'px';
     hit.style.left = x.value - size / 2 + 'px';
     hit.style.top = Math.max(0, y.value - 170 * scale) + 'px';
-    hit.hidden = close || atom;
+    hit.hidden = close || companion.minimized || atom&&!companion.forceIdle;
+    rig.root.style.visibility=companion.minimized?'hidden':'visible';
+    companion.position(x.value,y.value,scale);
     soundscape.tick(speed, pan, spinning);
     audioUI.update(index, soundscape.energy);
     smoothCurrent = springSnapshot();
@@ -513,6 +520,9 @@ function logic(dt: number) {
         smoothPrevious = smoothCurrent;
     rootTransform = rig.root.getAttribute('transform') || '';
 }
+let companionSpeech:string|null=null;
+const companion=new Companion({go,read:()=>{go('about');scriptQueue.push(2)},sound:toggleSound,say:(text)=>{if(!player.busy)announce(text);else companionSpeech=text},stop:()=>{companionSpeech=null;player.line=null},quiet:park,section:()=>ids[Math.max(0,index)]});
+companion.attach(rig.bones.get('hand.R')!);
 function frame(ms: number) {
     const dt = Math.min(.15, (ms - last) / 1000 || 0);
     last = ms;
@@ -537,4 +547,4 @@ function frame(ms: number) {
 requestAnimationFrame(frame);
 document.addEventListener('visibilitychange', () => { void soundscape.visibility(document.hidden).catch(() => { }); last = 0; acc = 0; });
 // Useful for automated readiness checks; no debug menu is shown to visitors.
-Object.assign(window, { motionMusic: { brain, signals, player, audio: soundscape, get state() { return { section: index, position: renderPosition, quiet: brain.quiet, time }; }, go } });
+Object.assign(window, { motionMusic: { companion,brain, signals, player, audio: soundscape, get state() { return { section: index, position: renderPosition, quiet: brain.quiet, time }; }, go } });
