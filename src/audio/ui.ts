@@ -2,7 +2,7 @@ import { soundscape, type Channel } from './engine';
 export function setupAudioUI(toggle: (on: boolean) => Promise<void>, start: () => Promise<void>) {
     const host = document.createElement('div');
     host.className = 'audio-controls';
-    host.innerHTML = `<button id="mixer-toggle" aria-expanded="false" aria-controls="audio-mixer" title="Audio mixer">Mix</button><div id="audio-mixer" hidden><strong>Your sound mix</strong><p>Original local voice · adaptive score · motion SFX</p>${(['master', 'music', 'voice', 'sfx'] as Channel[]).map(id => `<label>${{ master: 'Master', music: 'Music', voice: 'Richie’s voice', sfx: 'Sound effects' }[id]}<input data-channel="${id}" type="range" min="0" max="100" value="${Math.round(soundscape.levels[id] * 100)}"><output>${Math.round(soundscape.levels[id] * 100)}%</output></label>`).join('')}<button id="replay-tour" type="button">Replay experience ↺</button><span class="audio-status" id="audio-status" role="status">Sound is off. Start when you’re ready.</span><div class="audio-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>`;
+    host.innerHTML = `<button id="mixer-toggle" aria-expanded="false" aria-controls="audio-mixer" title="Audio mixer">Mix</button><div id="audio-mixer" hidden><strong>Your sound mix</strong><p>Original local voice · adaptive score · motion SFX</p>${(['master', 'music', 'voice', 'sfx'] as Channel[]).map(id => `<label>${{ master: 'Master', music: 'Music', voice: 'Jimmy’s voice', sfx: 'Sound effects' }[id]}<input data-channel="${id}" type="range" min="0" max="100" value="${Math.round(soundscape.levels[id] * 100)}"><output>${Math.round(soundscape.levels[id] * 100)}%</output></label>`).join('')}<button id="replay-tour" type="button">Replay experience ↺</button><span class="audio-status" id="audio-status" role="status">Sound is off. Start when you’re ready.</span><div class="audio-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>`;
     document.querySelector('.controls')!.append(host);
     const mixer = host.querySelector<HTMLElement>('#audio-mixer')!, button = host.querySelector<HTMLButtonElement>('#mixer-toggle')!;
     host.querySelector<HTMLButtonElement>('#replay-tour')!.onclick = async () => { mixer.hidden = true; await start().catch(() => { document.getElementById('audio-status')!.textContent = 'Audio could not start. Try Sound on again.'; }); };
@@ -20,7 +20,7 @@ export function setupAudioUI(toggle: (on: boolean) => Promise<void>, start: () =
     } });
     const invite = document.createElement('aside');
     invite.id = 'audio-invite';
-    invite.innerHTML = '<span class="audio-kicker">BEST EXPERIENCED WITH SOUND</span><h2>Meet Richie.<br>Feel the motion.</h2><p>A cartoon voice, a cinematic score, and a world that answers back.</p><div><button id="start-experience">Start experience ↗</button><button id="continue-silent">Continue silently</button></div><small>Headphones welcome. Volume starts gently.</small>';
+    invite.innerHTML = '<span class="audio-kicker">BEST EXPERIENCED WITH SOUND</span><h2>Jimmy.<br>Lights. Camera. Play.</h2><p>A cartoon voice, a cinematic score, and a world that answers back.</p><div><button id="start-experience">Start experience ↗</button><button id="continue-silent">Continue silently</button></div><small>Headphones welcome. Volume starts gently.</small>';
     document.body.append(invite);
     let dismissed = false;
     invite.querySelector<HTMLButtonElement>('#continue-silent')!.onclick = () => { dismissed = true; invite.hidden = true; };

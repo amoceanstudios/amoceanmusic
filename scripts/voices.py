@@ -18,6 +18,14 @@ scripted={}
 for p in sorted((ROOT/'src/lipsync/lines').glob('*.json')):
  text=json.loads(p.read_text())['text'];entries[p.stem]=text;scripted[p.stem]=p
 entries.update({
+ 'letter-joke':'Close call. I almost became a letter. Click me before I become punctuation.',
+ 'book-joke':'A book! Finally, a screen with absolutely no battery anxiety.',
+ 'work-joke':'Look around. I will be right here, pretending I am not showing off.',
+ 'tie-joke':'I put on a tie. That is how seriously I take your brilliant ideas.',
+ 'exit-joke':'Dramatic exit! Do not worry. The little portal is my return ticket.',
+ 'dimension':'Ta-da! Actual depth. I knew I had another dimension in me.',
+ 'gravity':'Gravity and I have a complicated relationship. Mostly long distance.',
+ 'click-me':'See this handsome face? Click it. Calculator, notes, timers, or a big idea. I am your shortcut.',
  'idle':'Next one? Click Next when you’re ready.',
  'copy':'Want a copy? I’ll show a button. Nothing is copied until you click.',
  'nav':'Finding your way? I’m opening six little shortcuts.',

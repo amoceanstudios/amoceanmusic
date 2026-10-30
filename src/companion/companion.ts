@@ -119,7 +119,7 @@ export class Companion {
         const hit = $('richie-hit');
         hit.style.touchAction = 'none';
         hit.onpointerdown = e => { if (e.button !== 0)
-            return; this.dragging = true; this.moved = false; this.start = { x: e.clientX, y: e.clientY }; const r = hit.getBoundingClientRect(); this.offset = { x: e.clientX - (r.left + r.width / 2), y: e.clientY - (r.top + r.height * .90) }; hit.setPointerCapture(e.pointerId); };
+            return; this.dragging = true; this.moved = false; this.start = { x: e.clientX, y: e.clientY }; const r = hit.getBoundingClientRect(); this.offset = { x: e.clientX - (r.left + r.width / 2), y: e.clientY - (r.top + r.height * .90) }; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); };
         hit.onpointermove = e => { if (!this.dragging)
             return; if (Math.hypot(e.clientX - this.start.x, e.clientY - this.start.y) > 6)
             this.moved = true; if (this.moved)
@@ -129,6 +129,7 @@ export class Companion {
         hit.onpointercancel = () => this.dragging = false;
         hit.onclick = () => { if (!this.moved)
             this.open(); this.moved = false; };
+        this.bag.onpointerdown=hit.onpointerdown;this.bag.onpointermove=hit.onpointermove;this.bag.onpointerup=hit.onpointerup;this.bag.onpointercancel=hit.onpointercancel;this.bag.onclick=hit.onclick;
         hit.setAttribute('aria-label', 'Jimmy: klik voor tools of sleep naar een vrije plek');
         document.addEventListener('keydown', e => { if (e.key === '/' && !(e.target as HTMLElement).closest('input,textarea,dialog')) {
             e.preventDefault();

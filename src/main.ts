@@ -1,4 +1,6 @@
 import './style.css';
+import {sceneRemarks} from './three/show';
+import {CinemaWorld} from './three/world';
 import {Staging,type StageFrame} from './cinematic/staging';
 import {CinematicMotion} from './cinematic/motion';
 import {DepthLayers} from './cinematic/layers';
@@ -39,6 +41,7 @@ try {
 catch { }
 signals.visits = visits;
 let time = 0, last = 0, acc = 0, index = -1, entered = 0, lastActivity = 0, lastScroll = scrollY, lastScrollTime = 0, lastDirection = 0, changes: number[] = [], hoverStart = 0, currentHover = '', pending: Action | null = null, pointUntil = 0, override: Point | null = null, overrideUntil = 0, scale = 1, scriptQueue: number[] = [], completed = new Set<number>(), activeScript = -1, shrugUntil = 0, footImpact = 0, lastVelocity = 0, smearFrames = 0, smearArmed = true, portfolioRelease = -1;
+let worldBook=0,worldPage=0,worldScale=1,worldVisible=true;
 let pose: Pose = {}, current = scene(), renderPosition = { x: innerWidth * .5, y: innerHeight * .59 };
 const x = new Spring(renderPosition.x), y = new Spring(renderPosition.y), ear = new Spring(105, 120, 8), tufts = [new Spring(0, 90, 6), new Spring(0, 90, 6), new Spring(0, 90, 6)], glassesX = new Spring(0, 200, 14), glassesY = new Spring(0, 200, 14), tie = new Spring(0, 80, 7);
 const STEP = 1 / 24;
@@ -52,7 +55,10 @@ const staging=new Staging(),cinematicMotion=new CinematicMotion();
 let shot:StageFrame|null=null,cinematicScale=1;
 document.querySelectorAll('[data-card],#letter-hitbox').forEach(n=>n.setAttribute('data-jimmy-foreground',''));
 const depthLayers=new DepthLayers(svg,rig.root,rig.ghosts);
-async function startExperience() { player.line = null; await player.enable(); await soundscape.buffer(loadLine.audio); player.line = null; scriptQueue = []; completed.clear(); pending = null; visits = 1; index = -1; portfolioRelease = -1; audioBeats.reset();staging.reenter(); lastActivity = time; scrollTo({ top: 0, behavior: 'instant' }); audioUI.status('Sound ready. Richie’s voice, music and effects are on.'); updateSoundButton(); }
+const spokenRemarks=new Set<number>();
+let world: CinemaWorld|null=null;try{world=new CinemaWorld()}catch{document.body.dataset.renderer='fallback';document.getElementById('live')!.textContent='WebGL niet beschikbaar. De compatibele weergave wordt gebruikt.'}
+
+async function startExperience() { player.line = null; await player.enable(); await soundscape.buffer(loadLine.audio); player.line = null; scriptQueue = []; completed.clear(); pending = null; visits = 1; index = -1; portfolioRelease = -1; audioBeats.reset();staging.reenter();world?.reset();spokenRemarks.clear(); lastActivity = time; scrollTo({ top: 0, behavior: 'instant' }); audioUI.status('Sound ready. Jimmy’s voice, music and effects are on.'); updateSoundButton(); }
 function updateSoundButton() { document.body.dataset.audioOn = String(!player.muted); document.getElementById('sound')!.textContent = player.muted ? 'Sound off' : 'Sound on'; document.getElementById('sound')!.setAttribute('aria-pressed', String(!player.muted)); }
 function announce(text: string, scripted = false) {
     if (player.busy)
@@ -454,12 +460,14 @@ function logic(dt: number) {
     rig.volume.view(x.velocity,dt,reduced.matches,x.value,innerWidth);
     rig.pose(pose);
     const aboutOpen = index === 2 ? clamp((progress - .3) / .08) * (1 - clamp((progress - .80) / .08)) : 0;
+    worldBook=aboutOpen;worldPage=index===2?clamp((progress-.53)/.12):0;
     rig.props(aboutOpen, index === 4, index === 2 ? clamp((progress - .53) / .12) : 0, tie.value);
     const blink = time % 4.7 < .13;
     rig.face(player.viseme, dt, blink, index === 5 ? clamp((progress - .18) * 2) : 0, reduced.matches);
     let outerScale = scale;
     if (index === 5 && !brain.quiet)
         outerScale *= reduced.matches||companion.forceIdle ? 1 : Math.max(.001, 1 - clamp((progress - .60) / .35));
+    worldScale=outerScale;
     const deformation = deform(x.velocity, y.velocity), bank = reduced.matches ? 0 : deformation.bank;
     let deformTransform = '';
     if (!reduced.matches && speed > 100 && !close && !brain.quiet)
@@ -475,6 +483,7 @@ function logic(dt: number) {
     [...whirlwind.children].forEach((n, i) => { const a = i / 14 * Math.PI * 2, r = 35 + (i % 4) * 13; n.setAttribute('transform', `translate(${Math.cos(a) * r} ${Math.sin(a) * r * .65}) rotate(${i * 39})`); });
     rig.root.setAttribute('opacity', spinning ? '.32' : '1');
     const atom = index === 5 && progress > .94 && !reduced.matches && !brain.quiet;
+    worldVisible=!atom||companion.forceIdle;
     let dot = svg.querySelector('#atom');
     if (!dot) {
         dot = document.createElementNS(svg.namespaceURI, 'circle');
@@ -503,7 +512,7 @@ function logic(dt: number) {
     signals.changes = changes.length;
     brain.now = time;
     brain.observe(signals);
-    if (!player.busy && scriptQueue.length === 0 && !companion.isOpen && companion.state!=='working') {
+    if (!player.busy && scriptQueue.length === 0 && !companion.isOpen && companion.state!=='working' && !(index===0&&world&&!reduced.matches&&world.director.time<24)) {
         if (pending) {
             execute(pending);
             pending = null;
@@ -536,8 +545,9 @@ function logic(dt: number) {
 }
 let companionSpeech:string|null=null;
 const companion=new Companion({go,read:()=>{go('about');scriptQueue.push(2)},sound:toggleSound,say:(text)=>{if(!player.busy)announce(text);else companionSpeech=text},stop:()=>{companionSpeech=null;player.line=null},quiet:park,section:()=>ids[Math.max(0,index)]});
-companion.onReenter=()=>staging.reenter();
+companion.onReenter=()=>{staging.reenter();world?.reset()};
 companion.attach(rig.bones.get('hand.R')!);
+document.getElementById('cinema-action')!.onclick=()=>companion.open();document.getElementById('help')!.onclick=()=>companion.open();
 function frame(ms: number) {
     const dt = Math.min(.15, (ms - last) / 1000 || 0);
     last = ms;
@@ -556,11 +566,14 @@ function frame(ms: number) {
         rig.bones.get('glasses')!.setAttribute('transform', `translate(${mix(smoothPrevious.gx, smoothCurrent.gx)+(pose.glasses?.tx||0)-smoothCurrent.gx} ${-3 + mix(smoothPrevious.gy, smoothCurrent.gy)})`);
         rig.tie.setAttribute('transform', `rotate(${mix(smoothPrevious.tie, smoothCurrent.tie)})`);
     }
-    if(!bubble.el.hidden){const matrix=rig.bones.get('mouth')!.getScreenCTM();if(matrix){const face=new DOMPoint(0,3).matrixTransform(matrix);bubble.follow(face,cinematicScale,reduced.matches,Math.max(.001,dt))}}
+    document.body.dataset.speaking=String(player.busy);
+    if(world){world.render({dt,time,section:index,x:renderPosition.x,y:renderPosition.y,scale:worldScale,pose,viseme:player.viseme,reduced:reduced.matches,minimized:companion.minimized,manual:!!companion.manual,open:companion.isOpen,working:companion.state==='working',book:worldBook,page:worldPage,visible:worldVisible&&rig.root.style.visibility!=='hidden'});const line=index===0&&!brain.quiet&&!companion.isOpen?world.director.line(player.busy||scriptQueue.length>0):null;if(line)announce(line);if(index>0&&sceneRemarks[index]&&!spokenRemarks.has(index)&&!player.busy&&scriptQueue.length===0&&!brain.quiet&&!companion.isOpen&&time-entered>4){spokenRemarks.add(index);announce(sceneRemarks[index])}document.getElementById('cinema-copy')!.hidden=index!==0||companion.isOpen;document.getElementById('cinema-copy')!.dataset.shot=world.director.shot;}
+    if(!bubble.el.hidden&&world){bubble.follow(world.face(),1,reduced.matches,Math.max(.001,dt))}
+    else if(!bubble.el.hidden){const matrix=rig.bones.get('mouth')!.getScreenCTM();if(matrix){const face=new DOMPoint(0,3).matrixTransform(matrix);bubble.follow(face,cinematicScale,reduced.matches,Math.max(.001,dt))}}
     soundVisuals.draw(dt, renderPosition.x, renderPosition.y, Math.min(1.1, scale), soundscape.energy, soundscape.enabled, reduced.matches);
     requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 document.addEventListener('visibilitychange', () => { void soundscape.visibility(document.hidden).catch(() => { }); last = 0; acc = 0; });
 // Useful for automated readiness checks; no debug menu is shown to visitors.
-Object.assign(window, { motionMusic: { staging,companion,brain, signals, player, audio: soundscape, get state() { return { section: index, position: renderPosition, quiet: brain.quiet, time }; }, go } });
+Object.assign(window, { motionMusic: { get world(){return world},staging,companion,brain, signals, player, audio: soundscape, get state() { return { section: index, position: renderPosition, quiet: brain.quiet, time }; }, go } });

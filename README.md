@@ -45,7 +45,7 @@ This command generates a text-only approximation for a new line. For a matching 
 
 ## Recolor Richie
 
-Change only `src/rig/palette.ts`. All rig, prop and effect colors come from those tokens. The simple page styles live separately in `src/style.css`.
+For the default 3D character, edit the material definitions at the top of `src/three/model.ts`; stage lighting is in `src/three/world.ts`. The retained vector fallback uses `src/rig/palette.ts`. Page styles live separately in `src/style.css`.
 
 ## Assistant rules
 
@@ -87,7 +87,7 @@ After changing the TypeScript source locally, run `npm install` and `npm run bui
 Click **Start experience** to replay the tour with sound, or continue silently. The Sound button mutes **all** channels; M is its keyboard shortcut outside text fields. **Mix** controls master, music, voice and SFX levels independently and offers Replay experience. Headphones are useful for stereo movement.
 
 - An original procedural score changes harmony and pacing across the six scenes, with sparse plucks, a soft bass foundation, stereo space and a resolving farewell. It is generated locally in Web Audio, not streamed.
-- Richie has 24 bundled original synthesized voice clips. The Flite CMU RMS voice is transformed with pitch, tempo, EQ and compression; scene-specific delivery is brighter for the portfolio and gentler for About/Bye. This is a deliberately synthetic cartoon voice, not a human actor or celebrity imitation.
+- Jimmy has 32 bundled original synthesized voice clips (24 original and 8 cinematic additions). The Flite CMU RMS voice is transformed with pitch, tempo, EQ and compression; scene-specific delivery is brighter for the portfolio and gentler for About/Bye. This is a deliberately synthetic cartoon voice, not a human actor or celebrity imitation.
 - The voice and phoneme track come from the same synthesis pass. The player uses the **actual audio sample clock**, waits for decoding before moving the mouth, and ducks the score underneath dialogue. The active line continues across section cuts.
 - SFX follow clip thresholds and real velocity: spin, arc whoosh, landing, elastic recoil, book opening, turning and closing, tie rustle, reveal chimes, button/hover/focus/typing sounds, validation cues and success/copy feedback. Cooldowns avoid scroll-triggered noise storms.
 - Background wind follows flight speed, effects are panned to Richie's horizontal position, and restrained visual rings/voice energy respond to those same events. Quiet score pulses are presented against the same scheduled audio beat times. Reduced motion removes flying/impact effects and visual pulses but keeps optional voice, score and interface feedback.
@@ -100,7 +100,7 @@ Audio tests decode and play a real bundled clip in Chromium, measure voice activ
 
 ## Jimmy companion upgrade
 
-Richie’s existing original rig and all 24 recorded voices, scene clips, music buses and mixer are retained. The expanded companion is named Jimmy in the new bag; the older tour controls retain the Richie label for compatibility. Click Jimmy or his gold bag, or press `/`. Drag the character to a preferred free area; text avoidance remains authoritative, so he may move away from a position that covers content. Minimize or Quiet turns him into a small portal; click it to restore him, even after the footer farewell.
+Richie’s existing original rig and all 24 recorded voices, scene clips, music buses and mixer are retained. The expanded companion is named Jimmy in the new bag; the visible controls now use Jimmy; historical rig identifiers remain internal for compatibility. Click Jimmy or his gold bag, or press `/`. Drag the character to a preferred free area; text avoidance remains authoritative, so he may move away from a position that covers content. Minimize or Quiet turns him into a small portal; click it to restore him, even after the footer farewell.
 
 Feature modules:
 
@@ -148,3 +148,17 @@ Reduced motion removes depth travel, blur, parallax, anticipation, secondary off
 A small spring-driven yaw changes the relative position of the muzzle, eyes, glasses, brows and mouth, plus head foreshortening and highlight position. It follows flight direction and screen position. Reduced motion holds this projection and lighting still. This is a layered 2.5D vector character, not an imported 3D mesh, and needs no WebGL library, textures or model downloads. Existing skeleton, tool attachments, visemes, recorded audio, staging and foreground occlusion remain shared.
 
 `tests/volume.spec.ts` checks bounded palette-derived colors, front-of-eye glass ordering, visible sculpted features, live reduced-motion changes and desktop/mobile close-up renders. Screenshots are written to `/tmp/jimmy-25d-*.png`.
+
+## Actual 3D cinematic version
+
+The default character is now a **real Three.js WebGL 3D model**, built from meshes, tubes, spheres, capsules and torus geometry. It has a parented 3D skeleton, physical/standard materials, modeled eyes/pupils, transparent glass, a sculpted muzzle and nose, rounded fingers, clothing, a book with a moving page, tie and work prop. The former SVG rig remains the shared pose/physics/scene driver and a clearly labeled compatibility fallback; it is hidden while WebGL is active.
+
+- `src/three/model.ts`: original procedural 3D Jimmy, geometry/materials, bone transforms, mesh-based visemes and attached props. No character/model downloads or paid assets.
+- `src/three/world.ts`: perspective camera, warm key light, blue rim/fill lighting, real shadow mapping, stage floor, depth fog, star particles and an animated shader portal. It projects the character and mouth back into screen coordinates for character clicks, tool access and the organic speech balloon. The main pose, book/page and task state are shared with the existing scenes.
+- `src/three/show.ts`: an approximately 24-second automatic opening, including depth arrival, a hero wave, a flying flourish, a comic double-take and a direct invitation to click Jimmy with a modeled calculator demonstration. Fast movement uses two brief 3D mesh-ghost smear exposures. Clicking the character opens the bag immediately and pauses the opening. Replay experience restarts the show; visitors can scroll away at any time.
+- Eight new local voice clips add dimension/gravity jokes, a clear click-to-use invitation, and one short remark in each later section. They use the existing sample-clock lip-sync, music ducking and mixer. Lines are queued around existing speech rather than interrupting it. These are authored comic beats, not a claim that live AI is configured.
+- Reduced motion keeps the real 3D model, stable framing and readable dialogue but removes the flying routine, moving camera and waving/bobbing poses. The narrative can still progress.
+
+A WebGL-capable browser with graphics acceleration is needed for the actual 3D experience. If initialization fails or the graphics context is lost, an explicit compatibility notice is shown; the original vector rig and local tools remain available. The deployment is still prebuilt in `dist/`; Netlify requires no build command. Three.js is bundled locally in a separate cacheable vendor chunk (there is no runtime CDN dependency). AI still requires the existing server-side environment variables.
+
+`tests/three.spec.ts` verifies that the browser renders actual WebGL triangles with a perspective camera, that the camera moves in normal mode, and that character clicks, mobile framing and reduced-motion interaction work. The Chromium test configuration enables software WebGL for headless verification. Screenshots are written to `/tmp/jimmy-real3d-*.png`.

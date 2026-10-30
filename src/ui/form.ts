@@ -34,7 +34,7 @@ export function setupForm(s: Signals) {
             s.validation = 'message';
             soundscape.event('error');
             msg.setAttribute('aria-invalid', 'true');
-            status.textContent = 'Please write a message. Richie will point it out.';
+            status.textContent = 'Please write a message. Jimmy will point it out.';
             if (!s.focused)
                 msg.focus();
             return;
