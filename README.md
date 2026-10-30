@@ -126,3 +126,17 @@ Without these server values, the route returns an explicit configuration error, 
 - Task progress is represented by a working pose and a hand-held board, with success/dance and error/recovery poses and existing sounds. Local tasks have a brief anticipation phase; Stop cancels pending local work and AI output. Reduced motion uses static poses. The original tour remains available alongside these interactions.
 
 `npm test` includes separate companion tool/browser tests and a server test with a mocked AI upstream. Live provider behavior requires your actual server configuration; it is not covered by the mock.
+
+## Cinematic presence and speech
+
+The same rig now has a shot-staging layer; existing clips, task poses, voice sample clocks and audio buses remain in place.
+
+- `src/cinematic/staging.ts`: deterministic entry vectors, an anticipation hold, a curved approach, scale as depth, gentle distant parallax/defocus and a settling focus spring. Portal restoration and Replay experience restart the approach. Minimize adds a brief arcing shrink into the portal; reduced motion hard-cuts instead. Hero framing is larger; opening the bag stages Jimmy closer beside the panel.
+- `src/cinematic/motion.ts`: additive S-line poses, delayed arm/forearm and neck springs, small head/ear/hand/toe offsets. It preserves task hands, existing scene poses and the original ear/tuft/glasses/tie springs. Body poses still update at 24 Hz.
+- `src/cinematic/layers.ts`: a shared viewport-space SVG plane masks Jimmy behind marked foreground UI silhouettes during distant shots. Contact/text avoidance remains authoritative. A depth-dependent soft contact shadow and portal ground mark help locate the actor. This is lightweight 2D staging, not a 3D renderer.
+- `src/ui/bubble.ts`: organic oval balloon, a short appearance squash, gentle breathing, an independently curved SVG tail behind the actor toward the cheek/mouth region, lagged following and obstacle/edge-aware candidate placement. Text retains a readable minimum scale at a distance. `show` accepts normal, whisper, cheer and thinking styles; the script also selects thinking/cheer from the line. Undo/Okay/Next are integrated as small underlined actions.
+- Long tool replies stay in the bag, accompanied by a short “Ik laat het je in de tas zien” line/gesture instead of an oversized paragraph above Jimmy.
+
+Reduced motion removes depth travel, blur, parallax, anticipation, secondary offsets, balloon breathing and spring following. It hard-cuts to a readable pose and keeps the speech tail, tools, clips and optional audio available. No audio cue timing is stretched to match visual depth; entry whooshes are emitted at the launch beat and recorded speech continues on its existing sample clock.
+
+`tests/cinematic.spec.ts` exercises the shot lifecycle, vector selection, portal replay, desktop/mobile balloon bounds and tail geometry, plus live reduced-motion changes. Browser screenshots of the approach and balloon are written to `/tmp/jimmy-depth-*.png` and `/tmp/jimmy-bubble-*.png` for visual review.

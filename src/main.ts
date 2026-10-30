@@ -1,4 +1,7 @@
 import './style.css';
+import {Staging,type StageFrame} from './cinematic/staging';
+import {CinematicMotion} from './cinematic/motion';
+import {DepthLayers} from './cinematic/layers';
 import {Companion} from './companion/companion';
 import { soundscape } from './audio/engine';
 import { AudioBeats } from './audio/beats';
@@ -45,7 +48,11 @@ const audioBeats = new AudioBeats(), soundVisuals = new SoundVisuals(svg);
 const audioUI = setupAudioUI(toggleSound, startExperience);
 soundscape.onEffect = (name, amount) => soundVisuals.effect(name, amount);
 let previousClose = false;
-async function startExperience() { player.line = null; await player.enable(); await soundscape.buffer(loadLine.audio); player.line = null; scriptQueue = []; completed.clear(); pending = null; visits = 1; index = -1; portfolioRelease = -1; audioBeats.reset(); lastActivity = time; scrollTo({ top: 0, behavior: 'instant' }); audioUI.status('Sound ready. Richie’s voice, music and effects are on.'); updateSoundButton(); }
+const staging=new Staging(),cinematicMotion=new CinematicMotion();
+let shot:StageFrame|null=null,cinematicScale=1;
+document.querySelectorAll('[data-card],#letter-hitbox').forEach(n=>n.setAttribute('data-jimmy-foreground',''));
+const depthLayers=new DepthLayers(svg,rig.root,rig.ghosts);
+async function startExperience() { player.line = null; await player.enable(); await soundscape.buffer(loadLine.audio); player.line = null; scriptQueue = []; completed.clear(); pending = null; visits = 1; index = -1; portfolioRelease = -1; audioBeats.reset();staging.reenter(); lastActivity = time; scrollTo({ top: 0, behavior: 'instant' }); audioUI.status('Sound ready. Richie’s voice, music and effects are on.'); updateSoundButton(); }
 function updateSoundButton() { document.body.dataset.audioOn = String(!player.muted); document.getElementById('sound')!.textContent = player.muted ? 'Sound off' : 'Sound on'; document.getElementById('sound')!.setAttribute('aria-pressed', String(!player.muted)); }
 function announce(text: string, scripted = false) {
     if (player.busy)
@@ -239,7 +246,7 @@ for (let i = 0; i < 14; i++) {
     path.setAttribute('stroke-width', i % 2 ? '3' : '5');
     whirlwind.append(path);
 }
-svg.insertBefore(whirlwind, rig.root);
+svg.insertBefore(whirlwind, rig.root.parentElement);
 function logic(dt: number) {
     if (document.hidden)
         return;
@@ -305,6 +312,7 @@ function logic(dt: number) {
     pose = sample(clip, reduced.matches ? .8 : progress);
     let target = catmull(clip.anchors.map(([a, b]) => ({ x: a / 100 * innerWidth, y: b / 100 * innerHeight })), progress);
     scale = innerWidth < 650 ? .72 : 1.05;
+    if(index===0)scale=innerWidth<650?.92:1.55;
     let close = false;
     if (index === 3 && !brain.quiet && !reduced.matches) {
         const speakingClose = !completed.has(3) || activeScript === 3;
@@ -341,7 +349,10 @@ function logic(dt: number) {
         scale = .62;
     }
     if(companion.manual&&!brain.quiet&&!close)target={...companion.manual};
-    if(companion.isOpen&&!brain.quiet){close=false;scale=innerWidth<650?.62:.9;target={x:innerWidth<650?innerWidth-65:Math.max(80,innerWidth-550),y:innerWidth<650?innerHeight-65:innerHeight*.70}}
+    if(companion.isOpen&&!brain.quiet){close=false;scale=innerWidth<650?.62:1.05;target={x:innerWidth<650?innerWidth-65:Math.max(80,innerWidth-550),y:innerWidth<650?innerHeight-65:innerHeight*.70}}
+    shot=staging.step({scene:index,target,position:{x:x.value,y:y.value},width:innerWidth,height:innerHeight,close,focus:companion.isOpen,manual:!!companion.manual,minimized:companion.minimized,reduced:reduced.matches,scrollSpeed:signals.speed},dt);
+    target=shot.target;scale*=shot.scale;cinematicScale=scale;
+    if(shot.justLaunched)soundscape.event('whoosh',pan,.5);
     if (!close && index !== 0) {
         const boxes = [...document.querySelectorAll<HTMLElement>('[data-richie-avoid],#jimmy-dialog[open]')].map(e => e.getBoundingClientRect()).filter(r => r.bottom > 0 && r.top < innerHeight);
         const pivot = { x: target.x, y: target.y - 52 * scale };
@@ -439,6 +450,7 @@ function logic(dt: number) {
         soundscape.event('reveal', pan, .75);
     previousClose = close;
     companion.frame(pose,index,age);
+    cinematicMotion.apply(pose,shot!,time,x.velocity,y.velocity,reduced.matches,companion.state==='working');
     rig.pose(pose);
     const aboutOpen = index === 2 ? clamp((progress - .3) / .08) * (1 - clamp((progress - .80) / .08)) : 0;
     rig.props(aboutOpen, index === 4, index === 2 ? clamp((progress - .53) / .12) : 0, tie.value);
@@ -503,16 +515,17 @@ function logic(dt: number) {
     }
     if (time > bubble.expiry && !player.busy)
         bubble.hide();
-    if (!bubble.el.hidden)
-        bubble.position(x.value, y.value - 165 * scale);
+
     const size = brain.quiet ? 40 : Math.max(40, 52 * scale);
     hit.style.width = size + 'px';
     hit.style.height = Math.min(220, 190 * scale) + 'px';
     hit.style.left = x.value - size / 2 + 'px';
     hit.style.top = Math.max(0, y.value - 170 * scale) + 'px';
     hit.hidden = close || companion.minimized || atom&&!companion.forceIdle;
-    rig.root.style.visibility=companion.minimized?'hidden':'visible';
+    rig.root.style.visibility=companion.minimized&&!shot!.exiting?'hidden':'visible';
     companion.position(x.value,y.value,scale);
+    document.getElementById('jimmy-bag')!.hidden=companion.minimized||shot!.far||close;
+    depthLayers.render(shot!,rig.root,rig.ghosts,x.value,y.value,scale,companion.minimized||close);
     soundscape.tick(speed, pan, spinning);
     audioUI.update(index, soundscape.energy);
     smoothCurrent = springSnapshot();
@@ -522,6 +535,7 @@ function logic(dt: number) {
 }
 let companionSpeech:string|null=null;
 const companion=new Companion({go,read:()=>{go('about');scriptQueue.push(2)},sound:toggleSound,say:(text)=>{if(!player.busy)announce(text);else companionSpeech=text},stop:()=>{companionSpeech=null;player.line=null},quiet:park,section:()=>ids[Math.max(0,index)]});
+companion.onReenter=()=>staging.reenter();
 companion.attach(rig.bones.get('hand.R')!);
 function frame(ms: number) {
     const dt = Math.min(.15, (ms - last) / 1000 || 0);
@@ -541,10 +555,11 @@ function frame(ms: number) {
         rig.bones.get('glasses')!.setAttribute('transform', `translate(${mix(smoothPrevious.gx, smoothCurrent.gx)} ${-3 + mix(smoothPrevious.gy, smoothCurrent.gy)})`);
         rig.tie.setAttribute('transform', `rotate(${mix(smoothPrevious.tie, smoothCurrent.tie)})`);
     }
+    if(!bubble.el.hidden){const matrix=rig.bones.get('mouth')!.getScreenCTM();if(matrix){const face=new DOMPoint(0,3).matrixTransform(matrix);bubble.follow(face,cinematicScale,reduced.matches,Math.max(.001,dt))}}
     soundVisuals.draw(dt, renderPosition.x, renderPosition.y, Math.min(1.1, scale), soundscape.energy, soundscape.enabled, reduced.matches);
     requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 document.addEventListener('visibilitychange', () => { void soundscape.visibility(document.hidden).catch(() => { }); last = 0; acc = 0; });
 // Useful for automated readiness checks; no debug menu is shown to visitors.
-Object.assign(window, { motionMusic: { companion,brain, signals, player, audio: soundscape, get state() { return { section: index, position: renderPosition, quiet: brain.quiet, time }; }, go } });
+Object.assign(window, { motionMusic: { staging,companion,brain, signals, player, audio: soundscape, get state() { return { section: index, position: renderPosition, quiet: brain.quiet, time }; }, go } });

@@ -19,6 +19,7 @@ type Reminder = {
     label: string;
 };
 export class Companion {
+    onReenter:(()=>void)|null=null;
     manual: {
         x: number;
         y: number;
@@ -77,7 +78,7 @@ export class Companion {
         this.tray = $('jimmy-task');
         this.timerPanel = $('jimmy-timers');
         $('jimmy-follow').onclick=()=>{this.manual=null;this.output('Ik volg de pagina weer.');};
-        this.portal.onclick = () => { this.minimized = false; this.forceIdle = true; hooks.quiet(false); this.born = performance.now(); soundscape.event('reveal'); };
+        this.portal.onclick = () => { this.minimized = false; this.forceIdle = true; hooks.quiet(false); this.born = performance.now();this.onReenter?.(); soundscape.event('reveal'); };
         this.bag.onclick = () => this.open();
         $('jimmy-minimize').onclick = () => { this.setMinimized(true); this.dialog.close(); };
         $('jimmy-close').onclick = () => this.dialog.close();
@@ -180,7 +181,7 @@ export class Companion {
             this.output('Maak eerst een herinnering.', true);
             return;
         } const stamp = (n: number) => new Date(n).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); const safe = r.label.replace(/[\r\n]/g, ' ').replace(/([,;\\])/g, '\\$1'); this.download(`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Motion Music//Jimmy//NL\r\nBEGIN:VEVENT\r\nUID:${r.id}@motionmusic.example\r\nDTSTAMP:${stamp(Date.now())}\r\nDTSTART:${stamp(r.at)}\r\nDTEND:${stamp(r.at + 60000)}\r\nSUMMARY:${safe}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`, 'jimmy-herinnering.ics', 'text/calendar'); }); }
-    private output(text: string, error = false) { this.result.textContent = text; this.hooks.say(text.length>280?text.slice(0,280)+'… De rest staat in de tas.':text); this.setState(error ? 'error' : 'success'); }
+    private output(text: string, error = false) { this.result.textContent = text; this.hooks.say(text.length>180?'Ik laat het je in de tas zien.':text); this.setState(error ? 'error' : 'success'); }
     private setState(state: typeof this.state) { this.state = state; this.changed = performance.now(); this.tray.hidden = state !== 'working'; this.tray.querySelector('span')!.textContent = `Jimmy gebruikt: ${tools.find(t => t.id === this.tool)?.label}…`; if (state === 'success' || state === 'error')
         soundscape.event(state === 'success' ? 'success' : 'error', 0, .45); }
     stop(cancelSpeech = false) { if (cancelSpeech) {
@@ -434,5 +435,5 @@ export class Companion {
             this.state = 'idle';
         this.bag.hidden = this.minimized;
     }
-    position(x: number, y: number, scale: number) { this.portalArt.setAttribute('cx', String(x)); this.portalArt.setAttribute('cy', String(y + 60 * scale)); this.portalArt.setAttribute('rx', String(45 * scale)); this.portalArt.setAttribute('ry', String(11 * scale)); this.portalArt.setAttribute('opacity', this.intro ? '0.7' : '0'); this.bag.style.left = Math.max(5, Math.min(innerWidth - 42, x + 26 * scale)) + 'px'; this.bag.style.top = Math.max(75, Math.min(innerHeight - 45, y - 60 * scale)) + 'px'; }
+    position(x: number, y: number, scale: number) { this.portalArt.setAttribute('cx', String(x)); this.portalArt.setAttribute('cy', String(y + 60 * scale)); this.portalArt.setAttribute('rx', String(45 * scale)); this.portalArt.setAttribute('ry', String(11 * scale)); this.portalArt.setAttribute('opacity','0'); this.bag.style.left = Math.max(5, Math.min(innerWidth - 42, x + 26 * scale)) + 'px'; this.bag.style.top = Math.max(75, Math.min(innerHeight - 45, y - 60 * scale)) + 'px'; }
 }
