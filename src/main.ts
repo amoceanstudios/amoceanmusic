@@ -1,4 +1,8 @@
 import './style.css';
+import { soundscape } from './audio/engine';
+import { AudioBeats } from './audio/beats';
+import { setupAudioUI } from './audio/ui';
+import { SoundVisuals } from './audio/visuals';
 import { Rig } from './rig/draw';
 import type { Pose } from './rig/skeleton';
 import { palette } from './rig/palette';
@@ -34,115 +38,196 @@ let time = 0, last = 0, acc = 0, index = -1, entered = 0, lastActivity = 0, last
 let pose: Pose = {}, current = scene(), renderPosition = { x: innerWidth * .5, y: innerHeight * .59 };
 const x = new Spring(renderPosition.x), y = new Spring(renderPosition.y), ear = new Spring(105, 120, 8), tufts = [new Spring(0, 90, 6), new Spring(0, 90, 6), new Spring(0, 90, 6)], glassesX = new Spring(0, 200, 14), glassesY = new Spring(0, 200, 14), tie = new Spring(0, 80, 7);
 const STEP = 1 / 24;
-const springSnapshot=()=>({x:x.value,y:y.value,ear:ear.value,gx:glassesX.value,gy:glassesY.value,tie:tie.value,tufts:tufts.map(t=>t.value)});
-let smoothPrevious=springSnapshot(),smoothCurrent=springSnapshot(),rootTransform='';
-function announce(text: string, scripted = false) { if (player.busy)
-    return false; const line = autoCues(text); player.start(line, scripted); bubble.show(text, time + line.duration + 3); return true; }
+const springSnapshot = () => ({ x: x.value, y: y.value, ear: ear.value, gx: glassesX.value, gy: glassesY.value, tie: tie.value, tufts: tufts.map(t => t.value) });
+let smoothPrevious = springSnapshot(), smoothCurrent = springSnapshot(), rootTransform = '';
+const audioBeats = new AudioBeats(), soundVisuals = new SoundVisuals(svg);
+const audioUI = setupAudioUI(toggleSound, startExperience);
+soundscape.onEffect = (name, amount) => soundVisuals.effect(name, amount);
+let previousClose = false;
+async function startExperience() { player.line = null; await player.enable(); await soundscape.buffer(loadLine.audio); player.line = null; scriptQueue = []; completed.clear(); pending = null; visits = 1; index = -1; portfolioRelease = -1; audioBeats.reset(); lastActivity = time; scrollTo({ top: 0, behavior: 'instant' }); audioUI.status('Sound ready. Richie’s voice, music and effects are on.'); updateSoundButton(); }
+function updateSoundButton() { document.body.dataset.audioOn = String(!player.muted); document.getElementById('sound')!.textContent = player.muted ? 'Sound off' : 'Sound on'; document.getElementById('sound')!.setAttribute('aria-pressed', String(!player.muted)); }
+function announce(text: string, scripted = false) {
+    if (player.busy)
+        return false;
+    const line = autoCues(text);
+    player.start(line, scripted);
+    bubble.show(text, time + line.duration + 3);
+    return true;
+}
 function go(id: string) { const old = scrollY; document.getElementById(id)?.scrollIntoView({ behavior: reduced.matches ? 'instant' : 'smooth' }); bubble.chip('Undo scroll', () => { scrollTo({ top: old, behavior: reduced.matches ? 'instant' : 'smooth' }); bubble.hide(); }); }
 const nav = minimap(go), copy = selectionChip(async (text) => { const ok = await copyText(text); document.getElementById('live')!.textContent = ok ? 'Selected text copied. Clipboard changes cannot be undone here.' : 'Clipboard unavailable. Use your browser’s Copy command.'; copy.hide(); });
 setupForm(signals);
-function park(value: boolean) { brain.quiet = value; document.getElementById('quiet')!.setAttribute('aria-pressed', String(value)); document.getElementById('quiet')!.textContent = value ? '☾ Quiet on' : '☾ Quiet'; if (value) {
-    pending = null;
-    override = null;
-    nav.hidden = true;
-    copy.hide();
-    if (!player.scripted) {
-        player.line = null;
-        bubble.hide();
+function park(value: boolean) {
+    brain.quiet = value;
+    document.getElementById('quiet')!.setAttribute('aria-pressed', String(value));
+    document.getElementById('quiet')!.textContent = value ? '☾ Quiet on' : '☾ Quiet';
+    if (value) {
+        pending = null;
+        override = null;
+        nav.hidden = true;
+        copy.hide();
+        if (!player.scripted) {
+            player.line = null;
+            bubble.hide();
+        }
     }
-} lastActivity = time; }
+    lastActivity = time;
+}
 document.getElementById('quiet')!.onclick = () => park(!brain.quiet);
 async function toggleSound(on: boolean) { try {
-    if (on)
+    if (on) {
         await player.enable();
-    else
+        audioUI.dismiss();
+        audioUI.status('Sound on. Mix music, voice and effects here.');
+    }
+    else {
         player.muted = true;
-    document.getElementById('sound')!.textContent = player.muted ? 'Sound off' : 'Sound on';
-    document.getElementById('sound')!.setAttribute('aria-pressed', String(!player.muted));
+        audioUI.status('All sound is muted.');
+    }
+    updateSoundButton();
 }
 catch {
+    audioUI.status('Audio could not start. Tap Sound on to retry.');
     document.getElementById('live')!.textContent = 'Audio is unavailable in this browser.';
 } }
 document.getElementById('sound')!.onclick = () => void toggleSound(player.muted);
 function openAsk() { lastActivity = time; ask.showModal(); (document.getElementById('question') as HTMLInputElement).focus(); }
 hit.onclick = openAsk;
 document.getElementById('help')!.onclick = openAsk;
-addEventListener('keydown', e => { const el = e.target as HTMLElement; if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(el.tagName)) {
+addEventListener('keydown', e => {
+    const el = e.target as HTMLElement;
+    if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(el.tagName)) {
+        e.preventDefault();
+        openAsk();
+    }
+});
+document.getElementById('ask-form')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    openAsk();
-} });
-document.getElementById('ask-form')!.addEventListener('submit', async (e) => { e.preventDefault(); const input = document.getElementById('question') as HTMLInputElement; const reply = await brain.ask(input.value); document.getElementById('reply')!.textContent = reply.text; if (reply.intent === 'quiet')
-    park(true); if (reply.intent === 'sound-on')
-    await toggleSound(true); if (reply.intent === 'sound-off')
-    await toggleSound(false); if (reply.intent === 'unknown')
-    shrugUntil = time + 2; if (reply.intent === 'go') {
-    ask.close();
-    if (!player.busy)
-        announce(reply.text);
-    else
-        document.getElementById('live')!.textContent = reply.text;
-    go(reply.target!);
-} if (reply.intent === 'read-about') {
-    ask.close();
-    if (player.busy) {
-        document.getElementById('live')!.textContent = 'I’ll finish this line, then read About.';
-        scriptQueue.push(2);
+    const input = document.getElementById('question') as HTMLInputElement;
+    const reply = await brain.ask(input.value);
+    document.getElementById('reply')!.textContent = reply.text;
+    if (reply.intent === 'quiet')
+        park(true);
+    if (reply.intent === 'sound-on')
+        await toggleSound(true);
+    if (reply.intent === 'sound-off')
+        await toggleSound(false);
+    if (reply.intent === 'unknown')
+        shrugUntil = time + 2;
+    if (reply.intent === 'go') {
+        ask.close();
+        if (!player.busy)
+            announce(reply.text);
+        else
+            document.getElementById('live')!.textContent = reply.text;
+        go(reply.target!);
     }
-    else {
-        completed.delete(2);
-        go('about');
-        scriptQueue.push(2);
+    if (reply.intent === 'read-about') {
+        ask.close();
+        if (player.busy) {
+            document.getElementById('live')!.textContent = 'I’ll finish this line, then read About.';
+            scriptQueue.push(2);
+        }
+        else {
+            completed.delete(2);
+            go('about');
+            scriptQueue.push(2);
+        }
     }
-} if (reply.intent === 'copy-email') {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = 'Copy email';
-    b.onclick = async () => { const ok = await copyText('hello@motionmusic.example'); b.textContent = ok ? 'Copied — demo email' : 'Use browser Copy instead'; if (!ok)
-        (document.getElementById('reply')!).textContent = 'hello@motionmusic.example'; };
-    document.getElementById('reply')!.append(b);
-} });
+    if (reply.intent === 'copy-email') {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = 'Copy email';
+        b.onclick = async () => {
+            const ok = await copyText('hello@motionmusic.example');
+            b.textContent = ok ? 'Copied — demo email' : 'Use browser Copy instead';
+            if (!ok)
+                (document.getElementById('reply')!).textContent = 'hello@motionmusic.example';
+        };
+        document.getElementById('reply')!.append(b);
+    }
+});
 for (const event of ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const)
     addEventListener(event, () => lastActivity = time, { passive: true });
-addEventListener('scroll', () => { lastActivity = time; const dy = scrollY - lastScroll, dir = Math.sign(dy); signals.speed = dy / Math.max(.016, time - lastScrollTime); signals.direction = dir; if (dir && lastDirection && dir !== lastDirection)
-    changes.push(time); if (dir)
-    lastDirection = dir; lastScroll = scrollY; lastScrollTime = time; }, { passive: true });
+addEventListener('scroll', () => {
+    lastActivity = time;
+    const dy = scrollY - lastScroll, dir = Math.sign(dy);
+    signals.speed = dy / Math.max(.016, time - lastScrollTime);
+    signals.direction = dir;
+    if (dir && lastDirection && dir !== lastDirection)
+        changes.push(time);
+    if (dir)
+        lastDirection = dir;
+    lastScroll = scrollY;
+    lastScrollTime = time;
+}, { passive: true });
 document.querySelectorAll<HTMLElement>('[data-card]').forEach(el => { const enter = () => { currentHover = el.dataset.card!; hoverStart = time; }; const leave = () => { currentHover = ''; hoverStart = 0; }; el.addEventListener('pointerenter', enter); el.addEventListener('pointerleave', leave); el.addEventListener('focus', enter); el.addEventListener('blur', leave); });
-function execute(a: Action) { if (!announce(a.text))
-    return; const oldFocus = document.activeElement as HTMLElement | null, oldOverride = override, oldUntil = overrideUntil; let undo = () => { }; if (a.kind === 'next') {
-    pointUntil = time + 8;
-    override = { x: innerWidth * .83, y: innerHeight * .83 };
-    overrideUntil = time + 10;
-    bubble.chip('Next ↓', () => go(ids[Math.min(5, current.index + 1)]));
-    undo = () => { pointUntil = 0; override = oldOverride; overrideUntil = oldUntil; };
-} if (a.kind === 'nav') {
-    nav.hidden = false;
-    undo = () => nav.hidden = true;
-} if (a.kind === 'copy') {
-    copy.show();
-    undo = () => copy.hide();
-} if (a.kind === 'email' || a.kind === 'message') {
-    const field = document.getElementById(a.kind === 'email' ? 'email' : 'message') as HTMLInputElement;
-    const r = field.getBoundingClientRect();
-    override = { x: Math.min(innerWidth - 35, r.right + 70), y: r.top + 50 };
-    overrideUntil = time + 8;
-    pointUntil = time + 8;
-    if (a.kind === 'message') {
-        field.focus();
-        signals.emptyMessage = false;
+function execute(a: Action) {
+    if (!announce(a.text))
+        return;
+    const oldFocus = document.activeElement as HTMLElement | null, oldOverride = override, oldUntil = overrideUntil;
+    let undo = () => { };
+    if (a.kind === 'next') {
+        pointUntil = time + 8;
+        override = { x: innerWidth * .83, y: innerHeight * .83 };
+        overrideUntil = time + 10;
+        bubble.chip('Next ↓', () => go(ids[Math.min(5, current.index + 1)]));
+        undo = () => { pointUntil = 0; override = oldOverride; overrideUntil = oldUntil; };
     }
-    if (a.kind === 'email')
-        signals.invalidEmail = false;
-    undo = () => { override = oldOverride; overrideUntil = oldUntil; pointUntil = 0; oldFocus?.focus(); };
-} if (a.kind === 'back') {
-    undo = () => { visits = 1; completed.delete(0); entered = time; if (index !== 0)
-        document.getElementById('load')!.scrollIntoView({ behavior: 'instant' }); };
-} if (a.kind === 'narrow') {
-    undo = () => { override = null; overrideUntil = 0; };
-} bubble.chip('Undo', () => { undo(); bubble.hide(); if (!player.scripted)
-    player.line = null; lastActivity = time; }); bubble.chip('Okay', () => { bubble.hide(); lastActivity = time; }); }
+    if (a.kind === 'nav') {
+        nav.hidden = false;
+        undo = () => nav.hidden = true;
+    }
+    if (a.kind === 'copy') {
+        copy.show();
+        undo = () => copy.hide();
+    }
+    if (a.kind === 'email' || a.kind === 'message') {
+        const field = document.getElementById(a.kind === 'email' ? 'email' : 'message') as HTMLInputElement;
+        const r = field.getBoundingClientRect();
+        override = { x: Math.min(innerWidth - 35, r.right + 70), y: r.top + 50 };
+        overrideUntil = time + 8;
+        pointUntil = time + 8;
+        if (a.kind === 'message') {
+            field.focus();
+            signals.emptyMessage = false;
+        }
+        if (a.kind === 'email')
+            signals.invalidEmail = false;
+        undo = () => { override = oldOverride; overrideUntil = oldUntil; pointUntil = 0; oldFocus?.focus(); };
+    }
+    if (a.kind === 'back') {
+        undo = () => {
+            visits = 1;
+            completed.delete(0);
+            entered = time;
+            if (index !== 0)
+                document.getElementById('load')!.scrollIntoView({ behavior: 'instant' });
+        };
+    }
+    if (a.kind === 'narrow') {
+        undo = () => { override = null; overrideUntil = 0; };
+    }
+    bubble.chip('Undo', () => {
+        undo();
+        bubble.hide();
+        if (!player.scripted)
+            player.line = null;
+        lastActivity = time;
+    });
+    bubble.chip('Okay', () => { bubble.hide(); lastActivity = time; });
+}
 // Scripted speech is queued across scroll cuts; its real-time playhead never scrubs.
-function startScript(i: number) { const l = lines[i]; if (!l || player.busy)
-    return false; player.start(l, true); activeScript = i; completed.add(i); bubble.show(l.text, time + l.duration + 3); return true; }
+function startScript(i: number) {
+    const l = lines[i];
+    if (!l || player.busy)
+        return false;
+    player.start(l, true);
+    activeScript = i;
+    completed.add(i);
+    bubble.show(l.text, time + l.duration + 3);
+    return true;
+}
 const whirlwind = document.createElementNS(svg.namespaceURI, 'g');
 whirlwind.setAttribute('stroke', palette.fur);
 whirlwind.setAttribute('fill', 'none');
@@ -155,7 +240,9 @@ for (let i = 0; i < 14; i++) {
 }
 svg.insertBefore(whirlwind, rig.root);
 function logic(dt: number) {
-    smoothPrevious=smoothCurrent;
+    if (document.hidden)
+        return;
+    smoothPrevious = smoothCurrent;
     time += dt;
     current = scene();
     if (current.index !== index) {
@@ -171,6 +258,8 @@ function logic(dt: number) {
             scriptQueue.push(index);
     }
     player.step(dt);
+    if (player.busy)
+        bubble.expiry = Math.max(bubble.expiry, time + 1.5);
     if (!player.busy && activeScript >= 0)
         activeScript = -1;
     let age = time - entered;
@@ -208,6 +297,8 @@ function logic(dt: number) {
     }
     if (signals.direction < 0 && time - lastScrollTime < 1.5 && index !== 0)
         progress = current.progress;
+    const pan = clamp(x.value / innerWidth * 2 - 1, -1, 1);
+    audioBeats.update(index, progress, pan, reduced.matches);
     const clip = clips[index];
     pose = sample(clip, reduced.matches ? .8 : progress);
     let target = catmull(clip.anchors.map(([a, b]) => ({ x: a / 100 * innerWidth, y: b / 100 * innerHeight })), progress);
@@ -217,8 +308,10 @@ function logic(dt: number) {
         const speakingClose = !completed.has(3) || activeScript === 3;
         if (speakingClose)
             portfolioRelease = -1;
-        else if (portfolioRelease < 0)
+        else if (portfolioRelease < 0) {
             portfolioRelease = time;
+            soundscape.event('whoosh', 0, .6);
+        }
         const pull = portfolioRelease < 0 ? 0 : clamp((time - portfolioRelease) / 1.2);
         close = pull < 1;
         if (close) {
@@ -278,14 +371,18 @@ function logic(dt: number) {
     }
     let speed = Math.hypot(x.velocity, y.velocity);
     const ax = (x.velocity - oldVX) / dt, ay = (y.velocity - oldVY) / dt;
-    if (lastVelocity > 160 && speed < 75)
+    if (lastVelocity > 160 && speed < 75) {
         footImpact = 4;
+        if (!reduced.matches)
+            soundscape.event('land', pan, .45);
+    }
     lastVelocity = speed;
     if (speed < 100)
         smearArmed = true;
     if (speed > 550 && smearArmed && !reduced.matches) {
         smearFrames = 2;
         smearArmed = false;
+        soundscape.event('whoosh', pan, Math.min(1.2, speed / 800));
     }
     if (!reduced.matches) {
         for (let i = 0; i < 5; i++) {
@@ -311,7 +408,7 @@ function logic(dt: number) {
     if (!reduced.matches) {
         pose.spine1 = { ...pose.spine1, sy: (pose.spine1?.sy ?? 1) * (1 + Math.sin(time * 2) * .02) };
         if (player.busy) {
-            pose.head = { ...pose.head, ty: Math.sin(player.time * 12) * 1.3, rot: (pose.head?.rot || 0) + Math.sin(player.time * 7) * 2 };
+            pose.head = { ...pose.head, ty: Math.sin(player.time * 12) * (1.3 + soundscape.energy * 2.4), rot: (pose.head?.rot || 0) + Math.sin(player.time * 7) * 2 };
             pose.browR = { ty: /[!?]/.test(player.line!.text) ? -4 : -1, rot: -6 };
             pose.tuft1 = { rot: (pose.tuft1?.rot || 0) + Math.sin(player.time * 12) * 4 };
         }
@@ -334,6 +431,9 @@ function logic(dt: number) {
         pose.root = { ...pose.root, sy: squashes[footImpact - 1], sx: 1 / squashes[footImpact - 1] };
         footImpact--;
     }
+    if (previousClose && !close && !reduced.matches)
+        soundscape.event('reveal', pan, .75);
+    previousClose = close;
     rig.pose(pose);
     const aboutOpen = index === 2 ? clamp((progress - .3) / .08) * (1 - clamp((progress - .80) / .08)) : 0;
     rig.props(aboutOpen, index === 4, index === 2 ? clamp((progress - .53) / .12) : 0, tie.value);
@@ -406,25 +506,35 @@ function logic(dt: number) {
     hit.style.left = x.value - size / 2 + 'px';
     hit.style.top = Math.max(0, y.value - 170 * scale) + 'px';
     hit.hidden = close || atom;
-    smoothCurrent=springSnapshot();
-    if(close || (Math.abs(x.velocity)+Math.abs(y.velocity)<1 && Math.hypot(smoothCurrent.x-smoothPrevious.x,smoothCurrent.y-smoothPrevious.y)>30))smoothPrevious=smoothCurrent;
-    rootTransform=rig.root.getAttribute('transform')||'';
+    soundscape.tick(speed, pan, spinning);
+    audioUI.update(index, soundscape.energy);
+    smoothCurrent = springSnapshot();
+    if (close || (Math.abs(x.velocity) + Math.abs(y.velocity) < 1 && Math.hypot(smoothCurrent.x - smoothPrevious.x, smoothCurrent.y - smoothPrevious.y) > 30))
+        smoothPrevious = smoothCurrent;
+    rootTransform = rig.root.getAttribute('transform') || '';
 }
-function frame(ms: number) { const dt = Math.min(.15, (ms - last) / 1000 || 0); last = ms; acc += dt; while (acc >= STEP) {
-    logic(STEP);
-    acc -= STEP;
+function frame(ms: number) {
+    const dt = Math.min(.15, (ms - last) / 1000 || 0);
+    last = ms;
+    acc += dt;
+    while (acc >= STEP) {
+        logic(STEP);
+        acc -= STEP;
+    }
+    // Interpolate springs only. Body/limb clips, mouth and smear exposures stay on 24 Hz ones.
+    if (index >= 0 && !reduced.matches) {
+        const alpha = acc / STEP, mix = (a: number, b: number) => a + (b - a) * alpha;
+        rig.root.setAttribute('transform', rootTransform.replace(/^translate\([^)]*\)/, `translate(${mix(smoothPrevious.x, smoothCurrent.x)} ${mix(smoothPrevious.y, smoothCurrent.y)})`));
+        const rotate = (id: string, value: number) => { const bone = rig.bones.get(id)!; bone.setAttribute('transform', (bone.getAttribute('transform') || '').replace(/rotate\([^)]*\)/, `rotate(${value})`)); };
+        rotate('fold', mix(smoothPrevious.ear, smoothCurrent.ear));
+        tufts.forEach((_, i) => rotate('tuft' + (i + 1), (pose['tuft' + (i + 1)]?.rot || 0) + mix(smoothPrevious.tufts[i], smoothCurrent.tufts[i]) - smoothCurrent.tufts[i]));
+        rig.bones.get('glasses')!.setAttribute('transform', `translate(${mix(smoothPrevious.gx, smoothCurrent.gx)} ${-3 + mix(smoothPrevious.gy, smoothCurrent.gy)})`);
+        rig.tie.setAttribute('transform', `rotate(${mix(smoothPrevious.tie, smoothCurrent.tie)})`);
+    }
+    soundVisuals.draw(dt, renderPosition.x, renderPosition.y, Math.min(1.1, scale), soundscape.energy, soundscape.enabled, reduced.matches);
+    requestAnimationFrame(frame);
 }
-// Interpolate springs only. Body/limb clips, mouth and smear exposures stay on 24 Hz ones.
-if(index>=0&&!reduced.matches){
- const alpha=acc/STEP,mix=(a:number,b:number)=>a+(b-a)*alpha;
- rig.root.setAttribute('transform',rootTransform.replace(/^translate\([^)]*\)/,`translate(${mix(smoothPrevious.x,smoothCurrent.x)} ${mix(smoothPrevious.y,smoothCurrent.y)})`));
- const rotate=(id:string,value:number)=>{const bone=rig.bones.get(id)!;bone.setAttribute('transform',(bone.getAttribute('transform')||'').replace(/rotate\([^)]*\)/,`rotate(${value})`))};
- rotate('fold',mix(smoothPrevious.ear,smoothCurrent.ear));
- tufts.forEach((_,i)=>rotate('tuft'+(i+1),(pose['tuft'+(i+1)]?.rot||0)+mix(smoothPrevious.tufts[i],smoothCurrent.tufts[i])-smoothCurrent.tufts[i]));
- rig.bones.get('glasses')!.setAttribute('transform',`translate(${mix(smoothPrevious.gx,smoothCurrent.gx)} ${-3+mix(smoothPrevious.gy,smoothCurrent.gy)})`);
- rig.tie.setAttribute('transform',`rotate(${mix(smoothPrevious.tie,smoothCurrent.tie)})`);
-}
-requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
+document.addEventListener('visibilitychange', () => { void soundscape.visibility(document.hidden).catch(() => { }); last = 0; acc = 0; });
 // Useful for automated readiness checks; no debug menu is shown to visitors.
-Object.assign(window, { motionMusic: { brain, signals, player, get state() { return { section: index, position: renderPosition, quiet: brain.quiet, time }; }, go } });
+Object.assign(window, { motionMusic: { brain, signals, player, audio: soundscape, get state() { return { section: index, position: renderPosition, quiet: brain.quiet, time }; }, go } });
