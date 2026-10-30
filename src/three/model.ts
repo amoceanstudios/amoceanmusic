@@ -2,6 +2,7 @@ import * as T from 'three';
 import { Spring } from '../physics/spring';
 import { skeleton, type Pose } from '../rig/skeleton';
 import type { Viseme } from '../rig/visemes';
+import type { Gesture } from '../tour/director';
 const materials = { blue: new T.MeshPhysicalMaterial({ color: '#203675', roughness: .78, clearcoat: .04 }), belly: new T.MeshStandardMaterial({ color: '#a3b4cb', roughness: .94 }), dark: new T.MeshStandardMaterial({ color: '#091329', roughness: .5 }), white: new T.MeshPhysicalMaterial({ color: '#fffaf0', roughness: .2, clearcoat: .6 }), iris: new T.MeshPhysicalMaterial({ color: '#3b79a4', roughness: .18 }), gold: new T.MeshStandardMaterial({ color: '#ebba58', metalness: .65, roughness: .26 }), suit: new T.MeshStandardMaterial({ color: '#202d43', roughness: .8 }), paper: new T.MeshStandardMaterial({ color: '#fff1cc' }), pink: new T.MeshStandardMaterial({ color: '#c17091' }), mouth: new T.MeshStandardMaterial({ color: '#100d23', roughness: 1 }), glass: new T.MeshPhysicalMaterial({ color: '#c2ddff', transparent: true, opacity: .12, roughness: .03, metalness: .1, depthWrite: false, clearcoat: 1 }) };
 const sphere = new T.SphereGeometry(1, 24, 16);
 export class JimmyModel {
@@ -23,6 +24,8 @@ export class JimmyModel {
     suits: T.Mesh[] = [];
     head: T.Group;
     bag: T.Mesh;
+    private toolProps=new Map<string,T.Group>();
+    private clockHand!:T.Mesh;
     constructor() {
         for (const b of skeleton) {
             const g = new T.Group();
@@ -150,6 +153,23 @@ export class JimmyModel {
             this.suits.push(suit);
         }
         this.bag = mesh(bone('hips'), materials.gold, .34, .12, -.03, .20, .25, .12);
+        const prop=(id:string,hand='R')=>{const g=new T.Group();g.position.set(0,-.18,.16);bone('hand.'+hand).add(g);this.toolProps.set(id,g);return g};
+        const pencil=prop('write');
+        const shaft=new T.Mesh(new T.CylinderGeometry(.025,.025,.58,8),materials.gold);pencil.add(shaft);
+        const tip=new T.Mesh(new T.ConeGeometry(.026,.12,8),materials.dark);tip.position.y=.35;pencil.add(tip);pencil.rotation.z=-.5;
+        const pad=prop('pad','L');const paper=new T.Mesh(new T.BoxGeometry(.42,.55,.05),materials.paper);pad.add(paper);pad.rotation.x=-.4;
+        const clock=prop('time','L');const face=new T.Mesh(new T.CylinderGeometry(.25,.25,.065,32),materials.paper);face.rotation.x=Math.PI/2;clock.add(face);
+        const rim=new T.Mesh(new T.TorusGeometry(.26,.025,8,40),materials.gold);rim.position.z=.04;clock.add(rim);
+        this.clockHand=new T.Mesh(new T.BoxGeometry(.022,.18,.02),materials.dark);this.clockHand.position.set(0,.07,.06);const pivot=new T.Group();pivot.add(this.clockHand);clock.add(pivot);
+        for(let i=0;i<12;i++){const tick=new T.Mesh(new T.BoxGeometry(.015,.035,.01),materials.dark),angle=i/12*Math.PI*2;tick.position.set(Math.sin(angle)*.21,Math.cos(angle)*.21,.045);tick.rotation.z=-angle;clock.add(tick)}
+        const glass=prop('inspect','L');const ring=new T.Mesh(new T.TorusGeometry(.18,.025,8,32),materials.gold);ring.position.y=.18;glass.add(ring);
+        const handle=new T.Mesh(new T.CylinderGeometry(.025,.025,.25,8),materials.dark);handle.position.y=-.1;glass.add(handle);
+        const lens=new T.Mesh(new T.CircleGeometry(.17,24),materials.glass);lens.position.set(0,.18,.01);glass.add(lens);
+        const baton=prop('conduct');const stick=new T.Mesh(new T.CylinderGeometry(.012,.02,.65,8),materials.white);stick.position.y=.27;baton.add(stick);
+    }
+    sceneProp(gesture:Gesture|undefined,time:number,reduced:boolean){
+        for(const [id,prop] of this.toolProps)prop.visible=id===gesture||(id==='pad'&&gesture==='write');
+        if(this.clockHand)this.clockHand.parent!.rotation.z=reduced?-.5:-time*2;
     }
     pose(pose: Pose, time: number, viseme: Viseme, section: number, reduced: boolean, working: boolean, bookOpen: number, page: number) {
         for (const b of skeleton) {

@@ -41,8 +41,12 @@ entries.update({
  'work':'Let’s look at the work.',
  **{f'go-{id}':f'I’m taking you to {id}. You can undo the scroll.' for id in ['load','welcome','about','portfolio','contact','bye']}
 })
+tour_entries={f'tour-{s["id"]}':s['text'] for s in json.loads((ROOT/'src/tour/stops.json').read_text())}
+entries.update(tour_entries)
+tour_only='--tour' in sys.argv
 only=sys.argv[2] if len(sys.argv)>2 and sys.argv[1]=='--only' else None
-bank=json.loads((ROOT/'src/audio/voices.json').read_text()) if only else {}
+bank=json.loads((ROOT/'src/audio/voices.json').read_text()) if only or tour_only else {}
+if tour_only:entries=tour_entries
 if only:entries={id:text for id,text in entries.items() if id==only}
 out=ROOT/'public/audio';out.mkdir(parents=True,exist_ok=True)
 with tempfile.TemporaryDirectory(prefix='richie-voice-') as tmp:

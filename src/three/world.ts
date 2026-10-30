@@ -1,6 +1,7 @@
 import * as T from 'three';
 import { JimmyModel } from './model';
-import { ShowDirector } from './show';
+import { acting } from '../tour/acting';
+import type {TourFrame} from '../tour/director';
 import type { Pose } from '../rig/skeleton';
 import type { Viseme } from '../rig/visemes';
 import { soundscape } from '../audio/engine';
@@ -21,6 +22,9 @@ export type WorldFrame = {
     visible: boolean;
     book: number;
     page: number;
+    tour: TourFrame|null;
+    tourPreview: boolean;
+    taskPose: boolean;
 };
 const ease = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
 export class CinemaWorld {
@@ -28,7 +32,10 @@ export class CinemaWorld {
     scene = new T.Scene();
     camera = new T.PerspectiveCamera(38, 1, .05, 80);
     model = new JimmyModel();
-    director = new ShowDirector();
+    private routeHold:TourFrame|null=null;
+    private routeSection=-1;
+    private shotName="idle";
+    private ambientAge=0;
     private portal = new T.Group();
     private floor: T.Mesh;
     private sparks: T.Points;
@@ -113,7 +120,7 @@ export class CinemaWorld {
         this.canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.failed = true; document.body.dataset.renderer = 'fallback'; document.getElementById('live')!.textContent = '3D-weergave onderbroken. De compatibele rig blijft beschikbaar.'; });
         this.canvas.addEventListener('webglcontextrestored', () => { this.failed = false; document.body.dataset.renderer = 'webgl'; });
     }
-    reset() { this.director.reset(); }
+    reset() { this.routeHold=null;this.ambientAge=0; }
     private project(p: T.Vector3) { const v = p.clone().project(this.camera); return { x: (v.x * .5 + .5) * innerWidth, y: (-.5 * v.y + .5) * innerHeight }; }
     private screenPoint(x: number, y: number, z: number) { this.ray.setFromCamera(new T.Vector2(x / innerWidth * 2 - 1, 1 - y / innerHeight * 2), this.camera); const out = new T.Vector3(); this.ray.ray.intersectPlane(new T.Plane(new T.Vector3(0, 0, 1), -z), out); return out; }
     render(f: WorldFrame) {
@@ -125,75 +132,61 @@ export class CinemaWorld {
             this.renderer.setSize(this.width, this.height, false);
             this.camera.aspect = this.width / this.height;
         }
-        const cinematic = f.section === 0 && !f.open && !f.manual && !f.minimized;
-        this.active = cinematic;
-        this.director.step(f.dt, cinematic, f.reduced);
-        const t = this.director.time, mobile = this.width < 650;
-        this.canvas.dataset.shot = cinematic ? this.director.shot : 'companion';
-        this.model.root.visible = f.visible && !f.minimized;
-        let pose: Pose = JSON.parse(JSON.stringify(f.pose));
-        if (cinematic) {
-            const enter = f.reduced ? 1 : ease(t / 3), fly = Math.max(0, Math.min(1, (t - 7.5) / 2.6));
-            this.camera.position.set(f.reduced ? 0 : Math.sin(t * .13) * .25, 1.2, mobile ? 12 : f.reduced ? 8.8 : 8.8 - Math.min(t, 24) * .025);
-            this.camera.lookAt(0, 1, 0);
-            this.camera.updateProjectionMatrix();
-            this.model.root.position.set(-2.1 * (1 - enter), -.06 + (f.reduced ? 0 : Math.sin(t * 2) * .018), -5 * (1 - enter));
-            this.model.root.scale.setScalar((mobile ? .88 : 1) * (f.reduced ? 1 : .06 + .94 * enter));
-            this.model.root.rotation.set(0, f.reduced ? -.12 : t < 3 ? (1 - enter) * Math.PI * 4 : Math.sin(t * .45) * .18, 0);
-            pose.root = { rot: 0 };
-            pose.head = { rot: 0 };
-            pose['upperArm.R'] = { rot: -135 };
-            pose['foreArm.R'] = { rot: Math.sin(t * 9) * 16 };
-            pose['upperArm.L'] = { rot: 6 };
-            pose['foreArm.L'] = { rot: 0 };
-            pose['thigh.L'] = { rot: 0 };
-            pose['thigh.R'] = { rot: 0 };
-            if (!f.reduced && t < 3) {
-                this.model.root.rotation.z = Math.sin(t * 8) * (1 - enter) * .8;
-                this.model.root.scale.y *= 1 + Math.sin(t * 7) * (1 - enter) * .3;
-            }
-            if (!f.reduced && t > 7.5 && t < 10.2) {
-                this.model.root.position.set(Math.sin(fly * Math.PI * 2) * 2.1, .25 + Math.sin(fly * Math.PI) * 1.4, -Math.sin(fly * Math.PI) * 1.8);
-                this.model.root.rotation.y = Math.sin(fly * Math.PI) * 1.3;
-                this.model.root.rotation.z = -Math.sin(fly * Math.PI * 2) * .65;
-                pose['upperArm.L'] = { rot: 100 };
-                pose['upperArm.R'] = { rot: -100 };
-                pose['thigh.L'] = { rot: -25 };
-                pose['thigh.R'] = { rot: 35 };
-            }
-            if (t >= 10.2 && t < 16) {
-                pose.head = { rot: Math.sin((t - 10.2) * 3) * 7 };
-                pose['upperArm.R'] = { rot: -60 };
-                pose['foreArm.R'] = { rot: -65 };
-            }
-            if (t >= 16) {
-                pose['upperArm.R'] = { rot: -25 };
-                pose['foreArm.R'] = { rot: 110 };
-                pose['hand.R'] = { rot: -85 };
-                pose.head = { rot: Math.sin(t * 1.2) * 2 };
-                this.model.root.rotation.y = -.15;
-            }
+        const route=f.tour;
+        if(f.section!==this.routeSection){this.routeHold=null;this.routeSection=f.section;this.ambientAge=0}
+        this.ambientAge+=f.dt;
+        if(route)this.routeHold=route;
+        const mobile=this.width<650,cinematic=f.section===0&&!f.open&&!f.manual&&!f.minimized;
+        const t=route?.age??this.ambientAge;
+        this.active=cinematic;
+        this.shotName=route?'tour-'+route.target:f.open?'tool-focus':this.routeHold?'tour-hold':'companion';
+        this.canvas.dataset.shot=this.shotName;
+        this.model.root.visible=(route?true:f.visible)&&!f.minimized;
+        this.camera.position.set(0,1.1,f.reduced?8.8:8.8-Math.sin(Math.min(t,5)*.2)*.08);
+        this.camera.lookAt(0,1.1,0);this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld(true);
+        const held=!f.manual&&(!f.open||f.tourPreview)?this.routeHold:null;
+        const stage=route||held;
+        let pose:Pose;
+        let z=0,size=mobile?160:230,px=this.width*.83,py=this.height*.76;
+        if(stage){px=stage.x;py=stage.y;size=stage.size;z=route?stage.z:0;pose=acting(stage.gesture,route?stage.age:1.6,f.reduced||!route)}
+        else if(f.manual){px=f.x;py=f.y;size=(mobile?170:230)*f.scale;pose=JSON.parse(JSON.stringify(f.pose))}
+        else if(f.open){
+            const r=document.getElementById('jimmy-dialog')!.getBoundingClientRect();
+            px=mobile?this.width*.16:Math.max(110,r.left-115);py=mobile?this.height-115:Math.min(this.height-120,r.top+220);size=mobile?135:220;
+            pose=acting(f.working?'calculate':'present',f.time,f.reduced);
+        }else{
+            // New companion blocking: small, readable, beside content. No legacy clip anchors or giant close-ups.
+            const avoid=document.querySelector<HTMLElement>(['#cinema-copy','#welcome h1','#about .copy','#portfolio .grid','#contact .contact-copy','#bye h2'][Math.max(0,f.section)])?.getBoundingClientRect();
+            if(avoid&&avoid.right<this.width-size*.6)px=Math.min(this.width-size*.38,avoid.right+size*.55);
+            if(f.section===0){px=this.width*(mobile?.65:.64);py=this.height*.73;size=mobile?235:340}
+            if(f.section===5)size*=Math.max(.001,f.scale/(mobile?.72:1.05));
+            pose=acting(f.section===2?'read':f.section===4?'present':'wave',f.time,f.reduced);
         }
-        else {
-            this.camera.position.set(0, 1.1, 8.8);
-            this.camera.lookAt(0, 1.1, 0);
-            this.camera.updateProjectionMatrix();
-            this.camera.updateMatrixWorld(true);
-            const z = f.reduced ? 0 : Math.max(-2.5, Math.min(.8, (f.scale - 1) * 1.2));
-            this.model.root.position.copy(this.screenPoint(f.x, f.y, z));
-            const screenHeight = 2 * (8.8 - z) * Math.tan(T.MathUtils.degToRad(19));
-            const factor = screenHeight / this.height / .018;
-            this.model.root.scale.setScalar(f.scale * factor);
-            this.model.root.rotation.set(0, f.reduced ? 0 : Math.sin(f.time * .4) * .12, 0);
+        const desired=this.screenPoint(px,py,z);
+        if(!stage&&!f.manual&&this.prior.lengthSq()>0&&!f.reduced){
+            const u=1-Math.exp(-f.dt*6);this.model.root.position.lerp(desired,u);
+            if(this.ambientAge<1.2)this.model.root.position.y+=Math.sin(this.ambientAge/1.2*Math.PI)*f.dt*.8;
+        }else this.model.root.position.copy(desired);
+        const screenHeight=2*(this.camera.position.z-z)*Math.tan(T.MathUtils.degToRad(19));
+        // The model is about 4.1 world units tall; keep the whole actor in the shot.
+        this.model.root.scale.setScalar(size/this.height*screenHeight/4.1);
+        this.model.root.rotation.set(0,stage?.yaw??(f.reduced?0:Math.sin(f.time*.5)*.08),stage?.roll??0);
+        if(stage){this.model.root.scale.y*=stage.squash;this.model.root.scale.x/=Math.sqrt(stage.squash)}
+        const gesture=stage?.gesture;
+        if(!stage&&f.taskPose)pose=JSON.parse(JSON.stringify(f.pose));
+        const reading=gesture==='read';
+        this.model.pose(pose,f.time,f.viseme,f.section,f.reduced,f.working||gesture==='calculate',reading?1:f.book,reading?(Math.sin(t*1.7)*.5+.5):f.page);
+        this.model.sceneProp(gesture,t,f.reduced);
+        // Eye/head direction and two-bone pointing target the actual highlighted DOM rect.
+        if(stage&&stage.travel<.08){
+            this.scene.updateMatrixWorld(true);
+            const aim=this.screenPoint(stage.aim.x,stage.aim.y,z);
+            if(['present','point','inspect'].includes(stage.gesture))this.pointAt(aim);
+            const local=this.model.root.worldToLocal(aim.clone());
+            this.model.head.rotation.z+=T.MathUtils.clamp(local.x*.055,-.18,.18);
+            this.model.head.rotation.y=T.MathUtils.clamp(local.x*.045,-.22,.22);
         }
-        if (f.reduced && cinematic) {
-            pose.root = { rot: 0 };
-            pose.head = { rot: 0 };
-            pose['upperArm.R'] = { rot: -90 };
-            pose['foreArm.R'] = { rot: -15 };
-        }
-        this.model.pose(pose, f.time, f.viseme, f.section, f.reduced, f.working || (cinematic && t >= 16 && t < 24), f.book, f.page);
-        this.portal.visible = cinematic && t < 4.2 && !f.reduced;
+        this.portal.visible = !!route && route.target==='entrance' && t < 2 && !f.reduced;
         this.portal.scale.setScalar(.6 + Math.sin(Math.min(t, 3) / 3 * Math.PI) * .5);
         this.portal.rotation.z = f.reduced ? 0 : t * .16;
         const portalShader = (this.portal.children[1] as T.Mesh).material as T.ShaderMaterial;
@@ -236,13 +229,10 @@ export class CinemaWorld {
         this.model.bones.get('hips')!.getWorldPosition(this.rootScreen);
         this.renderer.render(this.scene, this.camera);
         this.canvas.dataset.meshes = String(this.renderer.info.render.triangles);
-        if (cinematic && !f.reduced) {
-            const effect = this.director.effect();
-            if (effect)
-                soundscape.event(effect, 0, .7);
-        }
+        if (route && route.age>.25 && route.age<.25+f.dt && !f.reduced) soundscape.event('whoosh',route.x/this.width*2-1,.45);
         const bagPoint = this.project(this.model.bag.getWorldPosition(new T.Vector3()));
         const bag = document.getElementById('jimmy-bag')!;
+        bag.hidden=f.minimized||!this.model.root.visible;
         bag.style.left = (bagPoint.x - 16) + 'px';
         bag.style.top = (bagPoint.y - 16) + 'px';
         const hip = this.project(this.rootScreen), head = this.project(this.model.head.getWorldPosition(new T.Vector3())), foot = this.project(this.model.bones.get('foot.R')!.getWorldPosition(new T.Vector3()));
@@ -254,8 +244,30 @@ export class CinemaWorld {
             hit.style.top = Math.max(65, head.y - 55) + 'px';
             hit.style.width = size + 'px';
             hit.style.height = Math.min(this.height - 80, Math.max(100, foot.y - head.y + 85)) + 'px';
+            if(f.tourPreview){
+                const drawer=document.getElementById('jimmy-dialog')!.getBoundingClientRect(),r=hit.getBoundingClientRect();
+                // The actor may overlap the drawer visually, but its controls keep their hit area.
+                if(mobile)hit.style.height=Math.max(20,Math.min(r.height,drawer.top-r.top-2))+'px';
+                else hit.style.width=Math.max(20,Math.min(r.width,drawer.left-r.left-2))+'px';
+                if(bagPoint.x>=drawer.left&&bagPoint.x<=drawer.right&&bagPoint.y>=drawer.top&&bagPoint.y<=drawer.bottom)bag.hidden=true;
+            }
         }
     }
+    private pointAt(target:T.Vector3){
+        const local=this.model.root.worldToLocal(target.clone()),side=local.x>0?'R':'L';
+        const upper=this.model.bones.get('upperArm.'+side)!,fore=this.model.bones.get('foreArm.'+side)!,hand=this.model.bones.get('hand.'+side)!;
+        const joint=upper.parent!.worldToLocal(target.clone()).sub(upper.position);
+        const a=fore.position.length(),b=hand.position.length(),d=T.MathUtils.clamp(Math.hypot(joint.x,joint.y),.06,a+b-.01);
+        const elbow=(side==='R'?1:-1)*Math.acos(T.MathUtils.clamp((d*d-a*a-b*b)/(2*a*b),-1,1));
+        const theta=Math.atan2(joint.y,joint.x)-Math.atan2(b*Math.sin(elbow),a+b*Math.cos(elbow));
+        const restA=Math.atan2(fore.position.y,fore.position.x),restB=Math.atan2(hand.position.y,hand.position.x);
+        upper.rotation.z=theta-restA;fore.rotation.z=elbow+restA-restB;hand.rotation.z=-.35;
+    }
     face() { return this.project(this.mouth); }
-    get diagnostics() { return { real3D: true, triangles: this.renderer.info.render.triangles, calls: this.renderer.info.render.calls, shot: this.director.shot, cameraZ: this.camera.position.z }; }
+    bounds(){
+        const box=new T.Box3().setFromObject(this.model.root),points=[];
+        for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z])points.push(this.project(new T.Vector3(x,y,z)));
+        return {left:Math.min(...points.map(p=>p.x)),right:Math.max(...points.map(p=>p.x)),top:Math.min(...points.map(p=>p.y)),bottom:Math.max(...points.map(p=>p.y))};
+    }
+    get diagnostics() { return { real3D: true, triangles: this.renderer.info.render.triangles, calls: this.renderer.info.render.calls, shot: this.shotName, cameraZ: this.camera.position.z }; }
 }

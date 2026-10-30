@@ -1,0 +1,662 @@
+[
+  {
+    "id": "entrance",
+    "section": "load",
+    "target": "#cinema-action",
+    "title": "Jij bent de regisseur",
+    "gesture": "wave",
+    "text": "Welcome to my world! Click me any time. I will show you around, button by button.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "ask",
+    "section": "load",
+    "target": "#help",
+    "title": "Eén klik op Jimmy",
+    "gesture": "present",
+    "text": "Questions, ideas, or a quick task? This button opens my bag. So does clicking my handsome face.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "sound",
+    "section": "load",
+    "target": "#sound",
+    "title": "Stem, score en effecten",
+    "gesture": "listen",
+    "text": "Sound on gives me a voice, music, and a tiny orchestra. They insisted on a dressing room.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "quiet",
+    "section": "load",
+    "target": "#quiet",
+    "title": "Even wat rust",
+    "gesture": "hush",
+    "text": "Need a little quiet? I turn into a small portal. Same Jimmy, less drama.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "mix",
+    "section": "load",
+    "target": "#mixer-toggle",
+    "title": "Jimmy dirigeert",
+    "gesture": "conduct",
+    "text": "Your sound, your rules. Let me conduct you to the mixer.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "mix-master",
+    "section": "load",
+    "target": "[data-channel=\"master\"]",
+    "title": "Alles samen",
+    "gesture": "conduct",
+    "text": "Master controls everything. Even my dramatic entrances.",
+    "panel": "mixer",
+    "tool": ""
+  },
+  {
+    "id": "mix-music",
+    "section": "load",
+    "target": "[data-channel=\"music\"]",
+    "title": "De filmmuziek",
+    "gesture": "conduct",
+    "text": "Music sets the scene. Turn it down if my orchestra gets ambitious.",
+    "panel": "mixer",
+    "tool": ""
+  },
+  {
+    "id": "mix-voice",
+    "section": "load",
+    "target": "[data-channel=\"voice\"]",
+    "title": "Jimmy’s stem",
+    "gesture": "conduct",
+    "text": "This one is my voice. Please use your new power responsibly.",
+    "panel": "mixer",
+    "tool": ""
+  },
+  {
+    "id": "mix-sfx",
+    "section": "load",
+    "target": "[data-channel=\"sfx\"]",
+    "title": "Whooshes en clicks",
+    "gesture": "conduct",
+    "text": "Sound effects follow the action. Whoosh! That was the technical explanation.",
+    "panel": "mixer",
+    "tool": ""
+  },
+  {
+    "id": "replay",
+    "section": "load",
+    "target": "#replay-tour",
+    "title": "Nog een take",
+    "gesture": "bow",
+    "text": "Replay starts this entire tour again. I do my own stunts, every take.",
+    "panel": "mixer",
+    "tool": ""
+  },
+  {
+    "id": "enter",
+    "section": "load",
+    "target": "#load .enter",
+    "title": "Volg mij naar binnen",
+    "gesture": "point",
+    "text": "This arrow takes you into the site. Allow me to lead the way.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "welcome",
+    "section": "welcome",
+    "target": "#letter-hitbox",
+    "title": "De naam in de spotlight",
+    "gesture": "inspect",
+    "text": "Motion Music. Big letters, big feeling. I have checked: no loose letters overhead.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "bag",
+    "section": "welcome",
+    "target": "#help",
+    "title": "De tas gaat open",
+    "gesture": "present",
+    "text": "Now for my bag of tricks. A proper tour includes the pockets.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "tool-chat",
+    "section": "welcome",
+    "target": "[data-tool=\"chat\"]",
+    "title": "Vraag Jimmy",
+    "gesture": "present",
+    "text": "Ask a question here. Local shortcuts work straight away. Open AI questions need your setup and permission.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "tool-calculate",
+    "section": "welcome",
+    "target": "[data-tool=\"calculate\"]",
+    "title": "Calculator",
+    "gesture": "calculate",
+    "text": "A calculator. Two plus two is four. I checked it in three dimensions.",
+    "panel": "bag",
+    "tool": "calculate"
+  },
+  {
+    "id": "tool-notes",
+    "section": "welcome",
+    "target": "[data-tool=\"notes\"]",
+    "title": "Notitieblok",
+    "gesture": "write",
+    "text": "Catch an idea before it escapes. Notes stay in this browser.",
+    "panel": "bag",
+    "tool": "notes"
+  },
+  {
+    "id": "tool-timer",
+    "section": "welcome",
+    "target": "[data-tool=\"timer\"]",
+    "title": "Timer",
+    "gesture": "time",
+    "text": "Set a timer. I watch the clock while you do something more interesting.",
+    "panel": "bag",
+    "tool": "timer"
+  },
+  {
+    "id": "tool-stopwatch",
+    "section": "welcome",
+    "target": "[data-tool=\"stopwatch\"]",
+    "title": "Stopwatch",
+    "gesture": "time",
+    "text": "A stopwatch for your next brilliant sprint. Start, pause, and reset are right here.",
+    "panel": "bag",
+    "tool": "stopwatch"
+  },
+  {
+    "id": "extra-stopwatch-0",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(1)",
+    "title": "Start / pauze",
+    "gesture": "time",
+    "text": "Start or pause the stopwatch here. I will resist timing my own jokes.",
+    "panel": "bag",
+    "tool": "stopwatch"
+  },
+  {
+    "id": "extra-stopwatch-1",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(2)",
+    "title": "Reset",
+    "gesture": "time",
+    "text": "Reset clears the stopwatch. A fresh start, without the dramatic backstory.",
+    "panel": "bag",
+    "tool": "stopwatch"
+  },
+  {
+    "id": "tool-reminder",
+    "section": "welcome",
+    "target": "[data-tool=\"reminder\"]",
+    "title": "Agenda",
+    "gesture": "time",
+    "text": "Make a reminder, or export a calendar file. Browser reminders need this page to stay open.",
+    "panel": "bag",
+    "tool": "reminder"
+  },
+  {
+    "id": "extra-reminder-0",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(1)",
+    "title": "Download laatste agenda-item",
+    "gesture": "time",
+    "text": "Export your reminder for your calendar. Only after you click.",
+    "panel": "bag",
+    "tool": "reminder"
+  },
+  {
+    "id": "tool-convert",
+    "section": "welcome",
+    "target": "[data-tool=\"convert\"]",
+    "title": "Eenheden",
+    "gesture": "calculate",
+    "text": "Miles, kilometres, temperatures. I do the conversion; you keep the credit.",
+    "panel": "bag",
+    "tool": "convert"
+  },
+  {
+    "id": "tool-search",
+    "section": "welcome",
+    "target": "[data-tool=\"search\"]",
+    "title": "Web zoeken",
+    "gesture": "inspect",
+    "text": "Prepare a web search here. Only your click opens the results in another tab.",
+    "panel": "bag",
+    "tool": "search"
+  },
+  {
+    "id": "extra-search-0",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(1)",
+    "title": "Open zoekresultaten",
+    "gesture": "inspect",
+    "text": "Open your search results with this button. I leave the browsing to you.",
+    "panel": "bag",
+    "tool": "search"
+  },
+  {
+    "id": "tool-weather",
+    "section": "welcome",
+    "target": "[data-tool=\"weather\"]",
+    "title": "Weer",
+    "gesture": "inspect",
+    "text": "Ask about the weather. I fetch it after OK. My ears are not a reliable forecast.",
+    "panel": "bag",
+    "tool": "weather"
+  },
+  {
+    "id": "tool-currency",
+    "section": "welcome",
+    "target": "[data-tool=\"currency\"]",
+    "title": "Valuta",
+    "gesture": "calculate",
+    "text": "Convert currencies with a live rate after OK. My wallet remains tragically cartoon sized.",
+    "panel": "bag",
+    "tool": "currency"
+  },
+  {
+    "id": "tool-translate",
+    "section": "welcome",
+    "target": "[data-tool=\"translate\"]",
+    "title": "Vertalen",
+    "gesture": "read",
+    "text": "Translate your text with the optional AI connection. Nothing goes out before your permission and OK.",
+    "panel": "bag",
+    "tool": "translate"
+  },
+  {
+    "id": "tool-summarize",
+    "section": "welcome",
+    "target": "[data-tool=\"summarize\"]",
+    "title": "Samenvatten",
+    "gesture": "read",
+    "text": "Too much text? Ask for a summary. I keep the important bits, with AI enabled.",
+    "panel": "bag",
+    "tool": "summarize"
+  },
+  {
+    "id": "tool-rewrite",
+    "section": "welcome",
+    "target": "[data-tool=\"rewrite\"]",
+    "title": "Herschrijven",
+    "gesture": "write",
+    "text": "Give a sentence a new outfit. Friendly, concise, or formal, using the optional AI.",
+    "panel": "bag",
+    "tool": "rewrite"
+  },
+  {
+    "id": "tool-spelling",
+    "section": "welcome",
+    "target": "[data-tool=\"spelling\"]",
+    "title": "Spellingscheck",
+    "gesture": "write",
+    "text": "Let AI check the spelling. Even a cartoon appreciates a well placed apostrophe.",
+    "panel": "bag",
+    "tool": "spelling"
+  },
+  {
+    "id": "tool-clipboard",
+    "section": "welcome",
+    "target": "[data-tool=\"clipboard\"]",
+    "title": "Clipboard",
+    "gesture": "present",
+    "text": "Copy or paste when you choose. No sneaky clipboard magic during my tour.",
+    "panel": "bag",
+    "tool": "clipboard"
+  },
+  {
+    "id": "extra-clipboard-0",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(1)",
+    "title": "Plakken na toestemming",
+    "gesture": "present",
+    "text": "Paste asks the browser for permission. Your clipboard belongs to you.",
+    "panel": "bag",
+    "tool": "clipboard"
+  },
+  {
+    "id": "tool-files",
+    "section": "welcome",
+    "target": "[data-tool=\"files\"]",
+    "title": "Bestanden",
+    "gesture": "read",
+    "text": "Open a local text file or download your writing. Your files wait for your click.",
+    "panel": "bag",
+    "tool": "files"
+  },
+  {
+    "id": "extra-files-0",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(1)",
+    "title": "Open tekstbestand",
+    "gesture": "read",
+    "text": "Choose a text file from your device. I only point; you choose.",
+    "panel": "bag",
+    "tool": "files"
+  },
+  {
+    "id": "extra-files-1",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(2)",
+    "title": "Download tekst",
+    "gesture": "write",
+    "text": "Download saves the text as a file when you click.",
+    "panel": "bag",
+    "tool": "files"
+  },
+  {
+    "id": "tool-image",
+    "section": "welcome",
+    "target": "[data-tool=\"image\"]",
+    "title": "Afbeelding maken",
+    "gesture": "write",
+    "text": "An image idea starts here. Your click opens the generator shortcut; I do not generate it locally.",
+    "panel": "bag",
+    "tool": "image"
+  },
+  {
+    "id": "extra-image-0",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(1)",
+    "title": "Open image generator",
+    "gesture": "write",
+    "text": "This opens the image generator in a new tab after your click.",
+    "panel": "bag",
+    "tool": "image"
+  },
+  {
+    "id": "tool-ocr",
+    "section": "welcome",
+    "target": "[data-tool=\"ocr\"]",
+    "title": "Tekst uit beeld",
+    "gesture": "inspect",
+    "text": "Choose an image to read its text with AI. Uploading waits for your permission and OK.",
+    "panel": "bag",
+    "tool": "ocr"
+  },
+  {
+    "id": "extra-ocr-0",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(1)",
+    "title": "Kies afbeelding",
+    "gesture": "inspect",
+    "text": "This opens the image picker. Nothing is selected or sent by the tour.",
+    "panel": "bag",
+    "tool": "ocr"
+  },
+  {
+    "id": "tool-dictation",
+    "section": "welcome",
+    "target": "[data-tool=\"dictation\"]",
+    "title": "Dictatie",
+    "gesture": "listen",
+    "text": "Prefer talking? Start dictation yourself. This tour never switches on your microphone.",
+    "panel": "bag",
+    "tool": "dictation"
+  },
+  {
+    "id": "extra-dictation-0",
+    "section": "welcome",
+    "target": "#jimmy-extras button:nth-child(1)",
+    "title": "Start / stop microfoon",
+    "gesture": "listen",
+    "text": "You start and stop the microphone here. No surprise recording.",
+    "panel": "bag",
+    "tool": "dictation"
+  },
+  {
+    "id": "bag-filter",
+    "section": "welcome",
+    "target": "#jimmy-filter",
+    "title": "Vind een tool",
+    "gesture": "inspect",
+    "text": "Search the bag by name. No digging required.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-input",
+    "section": "welcome",
+    "target": "#jimmy-input",
+    "title": "Jouw opdracht",
+    "gesture": "write",
+    "text": "Write your task here. I wait for your OK before doing it.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-run",
+    "section": "welcome",
+    "target": "#jimmy-run",
+    "title": "En actie",
+    "gesture": "calculate",
+    "text": "OK starts your chosen task. The tour does not press it for you.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-stop",
+    "section": "welcome",
+    "target": "#jimmy-cancel",
+    "title": "Stop betekent stop",
+    "gesture": "hush",
+    "text": "Changed your mind? Stop cancels the active task and my speech.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-selection",
+    "section": "welcome",
+    "target": "#jimmy-selection",
+    "title": "Gebruik selectie",
+    "gesture": "read",
+    "text": "Bring selected text into the bag with this button.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-copy",
+    "section": "welcome",
+    "target": "#jimmy-copy",
+    "title": "Kopieer resultaat",
+    "gesture": "present",
+    "text": "Copy a result after your own click.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-undo",
+    "section": "welcome",
+    "target": "#jimmy-undo",
+    "title": "Undo",
+    "gesture": "bow",
+    "text": "Undo stops the task and closes its result. It cannot undo an external tab or a clipboard change.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-okay",
+    "section": "welcome",
+    "target": "#jimmy-okay",
+    "title": "Okay",
+    "gesture": "bow",
+    "text": "Okay closes the bag. I stay right here.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-privacy",
+    "section": "welcome",
+    "target": "#jimmy-dialog summary",
+    "title": "AI en privacy",
+    "gesture": "inspect",
+    "text": "This section explains the optional AI connection. You decide what gets sent.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "ai-consent",
+    "target": "#jimmy-ai",
+    "title": "Jouw AI-keuze",
+    "gesture": "hush",
+    "text": "AI stays off until you enable it. This tour never changes your consent.",
+    "section": "welcome",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "ai-code",
+    "target": "#jimmy-code",
+    "title": "Toegangscode",
+    "gesture": "inspect",
+    "text": "The access code is kept for this session. Never put a provider secret in this box.",
+    "section": "welcome",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-follow",
+    "section": "welcome",
+    "target": "#jimmy-follow",
+    "title": "Weer meevolgen",
+    "gesture": "point",
+    "text": "Drag me to a free spot. Follow brings me back into the scene.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-minimize",
+    "section": "welcome",
+    "target": "#jimmy-minimize",
+    "title": "Klein portaal",
+    "gesture": "hush",
+    "text": "Minimise packs me into a tiny portal. Click the portal to bring me back.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "bag-close",
+    "section": "welcome",
+    "target": "#jimmy-close",
+    "title": "Tas sluiten",
+    "gesture": "bow",
+    "text": "Close the bag here. I am still only one click away.",
+    "panel": "bag",
+    "tool": "chat"
+  },
+  {
+    "id": "about",
+    "section": "about",
+    "target": "#about-text",
+    "title": "Het verhaal",
+    "gesture": "read",
+    "text": "Here is our story. No two voices are alike. I brought a book; it seemed appropriate.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "work-0",
+    "section": "portfolio",
+    "target": "[data-card]:nth-child(1)",
+    "title": "Moving identities",
+    "gesture": "present",
+    "text": "A playful identity built around a rhythm that never sits still.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "work-1",
+    "section": "portfolio",
+    "target": "[data-card]:nth-child(2)",
+    "title": "Unfamiliar sounds",
+    "gesture": "listen",
+    "text": "Original music for curious people and unexpected places.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "work-2",
+    "section": "portfolio",
+    "target": "[data-card]:nth-child(3)",
+    "title": "Little stories",
+    "gesture": "bow",
+    "text": "Small animated stories with a human heartbeat.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "email-link",
+    "section": "contact",
+    "target": "#contact a",
+    "title": "Een berichtje",
+    "gesture": "present",
+    "text": "The email link opens your mail app after you click. This is a demo address.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "form-name",
+    "section": "contact",
+    "target": "#name",
+    "title": "Jouw naam",
+    "gesture": "write",
+    "text": "Your name goes here. I will not fill in an imaginary person.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "form-email",
+    "section": "contact",
+    "target": "#email",
+    "title": "Jouw e-mailadres",
+    "gesture": "write",
+    "text": "An email address goes here. The form checks whether it looks complete.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "form-message",
+    "section": "contact",
+    "target": "#message",
+    "title": "Jouw verhaal",
+    "gesture": "write",
+    "text": "Tell us your idea. Long story or short story, this space is yours.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "send",
+    "section": "contact",
+    "target": "#contact button[type=\"submit\"]",
+    "title": "Jij verstuurt",
+    "gesture": "present",
+    "text": "This demo checks your form locally. Nothing is transmitted. You are always the one who presses Send.",
+    "panel": "",
+    "tool": ""
+  },
+  {
+    "id": "farewell",
+    "section": "bye",
+    "target": "#bye h2",
+    "title": "Tot het volgende avontuur",
+    "gesture": "bow",
+    "text": "That is the whole set! Click me whenever you need something. I will be here, practising my next entrance.",
+    "panel": "",
+    "tool": ""
+  }
+]

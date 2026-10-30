@@ -56,6 +56,7 @@ export class Companion {
     private timerPanel: HTMLElement;
     private portalArt: SVGEllipseElement;
     private prop: SVGGElement | null = null;
+    private previewDraft: {tool:ToolId;input:string;result:string;filter:string}|null=null;
     constructor(private hooks: Hooks) {
         this.portalArt = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
         this.portalArt.setAttribute('fill', palette.fur);
@@ -96,7 +97,7 @@ export class Companion {
             e.preventDefault();
             void this.run();
         } });
-        this.dialog.addEventListener('close', () => this.recognition?.stop());
+        this.dialog.addEventListener('close', () => {this.recognition?.stop();if(this.dialog.dataset.tourPreview==='claimed')this.dialog.removeAttribute('data-tour-preview')});
         $('jimmy-file').onchange = async (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (!f)
             return; this.selectedFile = f; if (this.tool === 'ocr') {
             if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) || f.size > 2800000) {
@@ -141,10 +142,27 @@ export class Companion {
         this.tickTimers();
     }
     get isOpen(){return this.dialog.open}
+    get isTourPreview(){return this.dialog.dataset.tourPreview==='true'}
+    previewTool(id:ToolId){
+        if(!this.isTourPreview){
+            if(this.dialog.open)return;
+            const filter=document.getElementById('jimmy-filter') as HTMLInputElement;
+            this.previewDraft={tool:this.tool,input:this.input.value,result:this.result.textContent||'',filter:filter.value};
+            filter.value='';this.renderTools('');this.dialog.dataset.tourPreview='true';this.dialog.show();
+        }
+        if(this.tool!==id)this.select(id);
+    }
+    claimPreview(){if(this.isTourPreview)this.dialog.dataset.tourPreview='claimed';this.previewDraft=null}
+    endPreview(){
+        if(!this.isTourPreview)return;
+        this.dialog.close();this.dialog.removeAttribute('data-tour-preview');
+        const draft=this.previewDraft;this.previewDraft=null;
+        if(draft){this.select(draft.tool);this.input.value=draft.input;this.result.textContent=draft.result;(document.getElementById('jimmy-filter') as HTMLInputElement).value=draft.filter;this.renderTools(draft.filter)}
+    }
     get intro() { return (performance.now() - this.born) / 1000 < 1.6 && !this.minimized; }
     setMinimized(v: boolean) { this.minimized = v; if (v)
         this.stop(); this.portal.hidden = !v; }
-    open() { if (!this.dialog.open)
+    open() { if(this.dialog.hasAttribute('data-tour-preview')){this.claimPreview();this.dialog.close();this.dialog.removeAttribute('data-tour-preview')} if (!this.dialog.open)
         this.dialog.showModal(); this.input.focus(); soundscape.event('nav', 0, .5); }
     private renderTools(q: string) { const nav = document.getElementById('jimmy-tools')!; nav.replaceChildren(); for (const group of [...new Set(tools.map(t => t.group))]) {
         const selected = tools.filter(t => t.group === group && (t.label + ' ' + t.id).toLowerCase().includes(q.toLowerCase()));
@@ -157,6 +175,7 @@ export class Companion {
             const b = document.createElement('button');
             b.textContent = t.label;
             b.type = 'button';
+            b.dataset.tool=t.id;
             b.onclick = () => this.select(t.id);
             nav.append(b);
         }

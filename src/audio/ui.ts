@@ -24,7 +24,7 @@ export function setupAudioUI(toggle: (on: boolean) => Promise<void>, start: () =
     document.body.append(invite);
     let dismissed = false;
     invite.querySelector<HTMLButtonElement>('#continue-silent')!.onclick = () => { dismissed = true; invite.hidden = true; };
-    invite.querySelector<HTMLButtonElement>('#start-experience')!.onclick = async () => { const b = invite.querySelector<HTMLButtonElement>('#start-experience')!; b.disabled = true; b.textContent = 'Getting Richie ready…'; try {
+    invite.querySelector<HTMLButtonElement>('#start-experience')!.onclick = async () => { const b = invite.querySelector<HTMLButtonElement>('#start-experience')!; b.disabled = true; b.textContent = 'Getting Jimmy ready…'; try {
         await start();
         dismissed = true;
         invite.hidden = true;
